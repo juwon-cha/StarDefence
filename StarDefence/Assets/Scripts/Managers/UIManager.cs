@@ -25,7 +25,7 @@ public class UIManager : Singleton<UIManager>
 
     void Start()
     {
-        // 게임 시작 시 메인 HUD 생성
+        // TODO: Temp 게임 시작 시 메인 HUD 생성
         MainHUD = ShowSceneUI<HUD>("HUD");
     }
 
@@ -43,7 +43,13 @@ public class UIManager : Singleton<UIManager>
         MainCanvas = canvasGO.AddComponent<Canvas>();
         MainCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
         MainCanvas.sortingOrder = 0; // 기본 캔버스
-        canvasGO.AddComponent<CanvasScaler>();
+        
+        CanvasScaler scaler = canvasGO.AddComponent<CanvasScaler>();
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(300, 600); // 사용자 설정 해상도
+        scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+        scaler.matchWidthOrHeight = 1f;
+
         canvasGO.AddComponent<GraphicRaycaster>();
         DontDestroyOnLoad(canvasGO);
     }
@@ -54,7 +60,13 @@ public class UIManager : Singleton<UIManager>
         PopupCanvas = canvasGO.AddComponent<Canvas>();
         PopupCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
         PopupCanvas.sortingOrder = 100; // 팝업은 항상 위에
-        canvasGO.AddComponent<CanvasScaler>();
+        
+        CanvasScaler scaler = canvasGO.AddComponent<CanvasScaler>();
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(300, 600); // 사용자 설정 해상도
+        scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+        scaler.matchWidthOrHeight = 1f;
+
         canvasGO.AddComponent<GraphicRaycaster>();
         DontDestroyOnLoad(canvasGO);
     }
@@ -114,7 +126,7 @@ public class UIManager : Singleton<UIManager>
             canvas.worldCamera = Camera.main;
             // 렌더링 순서 문제를 해결하기 위한 핵심 코드
             canvas.overrideSorting = true;
-            canvas.sortingLayerName = "UI"; // "UI"라는 이름의 Sorting Layer가 필요합니다.
+            canvas.sortingLayerName = "UI"; // "UI"라는 이름의 Sorting Layer 필요함
             canvas.sortingOrder = 10; 
         }
 

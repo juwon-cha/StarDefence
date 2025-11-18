@@ -2,8 +2,6 @@ using UnityEngine;
 
 public class Tile : MonoBehaviour
 {
-    // --- Pathfinding Node Data ---
-
     // Grid Info
     public bool isWalkable;
     public Vector3 worldPosition;
@@ -11,8 +9,8 @@ public class Tile : MonoBehaviour
     public int gridY;
 
     // A* Costs
-    public int gCost; // 시작점(Start)에서 현재 타일까지의 비용
-    public int hCost; // 현재 타일에서 목적지(End)까지의 예상 비용 (Heuristic)
+    public int gCost; // 시작점에서 현재 타일까지의 비용
+    public int hCost; // 현재 타일에서 목적지까지의 예상 비용
     
     // fCost = gCost + hCost
     public int fCost => gCost + hCost;

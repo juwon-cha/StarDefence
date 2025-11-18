@@ -14,7 +14,7 @@ public class Enemy : MonoBehaviour
     private int waypointIndex = 0;
 
     /// <summary>
-    /// 적을 초기화하고 스탯과 목표를 설정한 후, 경로를 찾습니다.
+    /// 적을 초기화하고 스탯과 목표를 설정한 후 경로 찾음
     /// </summary>
     public void Initialize(EnemyDataSO data, Transform target)
     {
@@ -27,7 +27,7 @@ public class Enemy : MonoBehaviour
         if (path == null || path.Count == 0)
         {
             Debug.LogError($"경로를 찾을 수 없습니다! {name}", this);
-            // 경로가 없으면 바로 파괴하거나, 다른 로직 수행
+            // 경로가 없으면 바로 파괴하거나 다른 로직 수행?
             Destroy(gameObject);
         }
     }
@@ -64,9 +64,6 @@ public class Enemy : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 적에게 데미지를 입힙니다.
-    /// </summary>
     public void TakeDamage(float damage)
     {
         health -= damage;

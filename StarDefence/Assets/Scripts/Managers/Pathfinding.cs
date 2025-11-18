@@ -7,7 +7,7 @@ public class Pathfinding : Singleton<Pathfinding>
     private Bounds gridBounds;
 
     /// <summary>
-    /// GridManager가 생성한 타일 그리드와 경계 정보를 설정합니다.
+    /// GridManager가 생성한 타일 그리드와 경계 정보 설정
     /// </summary>
     public void SetGrid(Tile[,] grid, Bounds gridBounds)
     {
@@ -16,9 +16,9 @@ public class Pathfinding : Singleton<Pathfinding>
     }
 
     /// <summary>
-    /// 시작점에서 목적지까지의 경로를 찾습니다.
+    /// 시작점에서 목적지까지의 경로 찾기
     /// </summary>
-    /// <returns>경로 타일 리스트. 경로가 없으면 null을 반환합니다.</returns>
+    /// <returns>경로 타일 리스트. 경로가 없으면 null 반환</returns>
     public List<Tile> FindPath(Vector3 startPos, Vector3 targetPos)
     {
         if (grid == null)
@@ -85,7 +85,7 @@ public class Pathfinding : Singleton<Pathfinding>
     }
 
     /// <summary>
-    /// 최종 경로를 역추적하여 리스트로 만듭니다.
+    /// 최종 경로를 역추적하여 리스트 만듦
     /// </summary>
     private List<Tile> RetracePath(Tile startTile, Tile endTile)
     {
@@ -102,7 +102,7 @@ public class Pathfinding : Singleton<Pathfinding>
     }
 
     /// <summary>
-    /// 특정 타일의 이웃 타일(상하좌우)들을 가져옵니다.
+    /// 특정 타일의 이웃 타일(상하좌우)들 가져오기
     /// </summary>
     private List<Tile> GetNeighbours(Tile tile)
     {
@@ -129,7 +129,7 @@ public class Pathfinding : Singleton<Pathfinding>
     }
 
     /// <summary>
-    /// 두 타일 사이의 거리(H 코스트)를 계산합니다. (맨해튼 거리)
+    /// 두 타일 사이의 거리(H 코스트) 계산(맨해튼 거리)
     /// </summary>
     private int GetDistance(Tile tileA, Tile tileB)
     {
@@ -139,7 +139,7 @@ public class Pathfinding : Singleton<Pathfinding>
     }
 
     /// <summary>
-    /// 월드 좌표로부터 해당하는 타일을 찾습니다.
+    /// 월드 좌표로부터 해당하는 타일 찾기
     /// </summary>
     public Tile TileFromWorldPoint(Vector3 worldPosition)
     {
@@ -157,8 +157,8 @@ public class Pathfinding : Singleton<Pathfinding>
         x = Mathf.Clamp(x, 0, gridWidth - 1);
         y = Mathf.Clamp(y, 0, gridHeight - 1);
 
-        // GridManager의 생성 로직에 따라 월드 y좌표가 클수록 그리드 y좌표는 작아집니다.
-        // 이 관계를 역으로 계산하여 정확한 그리드 y 인덱스를 찾습니다.
+        // GridManager의 생성 로직에 따라 월드 y좌표가 클수록 그리드 y좌표는 작아진다
+        // 이 관계를 역으로 계산하여 정확한 그리드 y 인덱스를 찾는다
         int gridY = gridHeight - 1 - y;
 
         return grid[x, gridY];

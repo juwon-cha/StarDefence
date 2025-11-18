@@ -80,7 +80,6 @@ public class WaveManager : Singleton<WaveManager>
         }
         else
         {
-            // TODO: UIManager.Instance.MainHUD.ShowAllWavesCleared();
             Debug.Log("All waves cleared!");
         }
     }
