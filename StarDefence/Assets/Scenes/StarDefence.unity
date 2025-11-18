@@ -122,6 +122,58 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &458478029
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 458478031}
+  - component: {fileID: 458478030}
+  m_Layer: 0
+  m_Name: WaveManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &458478030
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 458478029}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8b205bd07e9cae44aab4217fa00ebba, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  isPersistent: 0
+  waves:
+  - {fileID: 11400000, guid: 74cd91f56d7d9694ab0a833467edf24b, type: 2}
+  - {fileID: 11400000, guid: d2f5e5d4f5936c9439e4b68e041286a7, type: 2}
+  - {fileID: 11400000, guid: 64237116b8274284bbc8dd5e5bc8de0f, type: 2}
+  - {fileID: 11400000, guid: 45217eb649a7bcb44b46157c3dd85db8, type: 2}
+  - {fileID: 11400000, guid: eda0b90f0fdabde40b0f3c8497f460ef, type: 2}
+  timeToPressButton: 15
+--- !u!4 &458478031
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 458478029}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &519420028
 GameObject:
   m_ObjectHideFlags: 0
@@ -214,11 +266,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &839898270 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 8690100470006527884, guid: 34f549b4406e4eb4ebe9bb996a2963ee, type: 3}
-  m_PrefabInstance: {fileID: 1439752205870973873}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1297137357
 GameObject:
   m_ObjectHideFlags: 0
@@ -249,7 +296,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isPersistent: 0
-  background: {fileID: 839898270}
   mapFileName: Stage11
   tileMappings:
   - tileKey: S
@@ -341,3 +387,4 @@ SceneRoots:
   - {fileID: 519420032}
   - {fileID: 1439752205870973873}
   - {fileID: 1297137359}
+  - {fileID: 458478031}

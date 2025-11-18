@@ -6,45 +6,43 @@ using System.Linq;
 [System.Serializable]
 public class TileMapping
 {
-    public string tileKey; // "S", "B", "X", "F", "H"
+    public string tileKey; // "S", "B", "X", "F", "H", "E"
     public GameObject tilePrefab; // 연결할 프리팹
 }
 
 public class GridManager : Singleton<GridManager>
 {
-    [Header("Map Settings")]
-    [SerializeField] private GameObject background;
-
     [Header("Map Data")]
     [SerializeField] private string mapFileName;
 
     [SerializeField] private List<TileMapping> tileMappings;
 
-    public Transform SpawnPoint => spawnPoint;
-    private Transform spawnPoint;
+    public Transform SpawnPoint { get; private set; }
+    public Transform EndPoint { get; private set; }
+    
     private BoxCollider2D bgCollider;
-
-    // 프리팹을 빠르게 찾기 위한 딕셔너리
     private Dictionary<string, GameObject> tilePrefabDict;
+    private Tile[,] tileGrid; // 길찾기를 위한 타일 그리드
 
     protected override void Awake()
     {
         base.Awake();
 
-        // 배경 및 콜라이더 유효성 검사
-        if (background == null)
+        // 태그로 배경 오브젝트를 찾고 BoxCollider2D를 가져옴
+        GameObject backgroundGO = GameObject.FindGameObjectWithTag("Background");
+        if (backgroundGO == null)
         {
-            Debug.LogError("[GridManager] 배경(background) 오브젝트가 할당되지 않았습니다!");
+            Debug.LogError("[GridManager] 'Background' 태그를 가진 오브젝트를 찾을 수 없습니다!");
             return;
         }
-        bgCollider = background.GetComponent<BoxCollider2D>();
+        
+        bgCollider = backgroundGO.GetComponent<BoxCollider2D>();
         if (bgCollider == null)
         {
-            Debug.LogError($"[GridManager] 배경 오브젝트 '{background.name}'에 BoxCollider2D가 없습니다!");
+            Debug.LogError($"[GridManager] 배경 오브젝트 '{backgroundGO.name}'에 BoxCollider2D가 없습니다!");
             return;
         }
 
-        // 프리팹 딕셔너리 초기화
         tilePrefabDict = new Dictionary<string, GameObject>();
         foreach (var mapping in tileMappings)
         {
@@ -54,16 +52,11 @@ public class GridManager : Singleton<GridManager>
             }
         }
 
-        // 맵 생성
         GenerateMapFromFile();
     }
 
-    /// <summary>
-    /// CSV 파일을 읽고 배경의 BoxCollider2D에 맞춰 타일 동적 생성
-    /// </summary>
     void GenerateMapFromFile()
     {
-        // 맵 데이터 로드
         TextAsset textAsset = Resources.Load<TextAsset>($"MapData/{mapFileName}");
         if (textAsset == null)
         {
@@ -71,7 +64,6 @@ public class GridManager : Singleton<GridManager>
             return;
         }
 
-        // CSV 데이터 파싱 및 그리드 크기 결정
         List<string[]> parsedRows = textAsset.text.Split('\n')
             .Where(row => !string.IsNullOrWhiteSpace(row) && !row.StartsWith("#"))
             .Select(row => row.Trim().Split(','))
@@ -85,14 +77,13 @@ public class GridManager : Singleton<GridManager>
 
         int gridHeight = parsedRows.Count;
         int gridWidth = parsedRows.Max(cols => cols.Length);
+        tileGrid = new Tile[gridWidth, gridHeight];
 
-        // 그리드 셀 크기 및 시작 위치 계산
         Bounds bounds = bgCollider.bounds;
         float cellWidth = bounds.size.x / gridWidth;
         float cellHeight = bounds.size.y / gridHeight;
-        Vector3 startPos = bounds.min; // 경계의 좌측 하단
+        Vector3 startPos = bounds.min;
 
-        // 타일 생성
         for (int y = 0; y < gridHeight; y++)
         {
             string[] cols = parsedRows[y];
@@ -100,37 +91,49 @@ public class GridManager : Singleton<GridManager>
             {
                 string key = cols[x].Trim();
 
+                float posX = startPos.x + x * cellWidth + (cellWidth / 2);
+                float posY = startPos.y + (gridHeight - 1 - y) * cellHeight + (cellHeight / 2);
+                Vector3 position = new Vector3(posX, posY, 0);
+
+                GameObject tileGO;
                 if (tilePrefabDict.TryGetValue(key, out GameObject prefab))
                 {
-                    // 각 셀의 중심 위치 계산
-                    // CSV의 (0,0)은 좌상단, Unity 좌표계의 (0,0)은 좌하단이므로 y좌표 보정
-                    float posX = startPos.x + x * cellWidth + (cellWidth / 2);
-                    float posY = startPos.y + (gridHeight - 1 - y) * cellHeight + (cellHeight / 2);
-                    Vector3 position = new Vector3(posX, posY, 0);
+                    tileGO = Instantiate(prefab, position, Quaternion.identity);
+                }
+                else
+                {
+                    tileGO = new GameObject($"Tile_{x}_{y}");
+                    tileGO.transform.position = position;
+                }
+                
+                tileGO.transform.SetParent(this.transform);
+                
+                Tile tileComponent = tileGO.AddComponent<Tile>();
+                bool isWalkable = (key == "S" || key == "H" || key == "P");
+                tileComponent.SetTileData(isWalkable, position, x, y);
+                tileGrid[x, y] = tileComponent;
 
-                    GameObject tileGO = Instantiate(prefab, position, Quaternion.identity);
-                    tileGO.transform.SetParent(this.transform);
+                SpriteRenderer sr = tileGO.GetComponent<SpriteRenderer>();
+                if (sr != null)
+                {
+                    sr.sortingOrder = y * 10;
+                }
 
-                    // 타일의 y 위치에 따라 렌더링 순서 동적 지정
-                    SpriteRenderer sr = tileGO.GetComponent<SpriteRenderer>();
-                    if (sr != null)
-                    {
-                        // 행(y) 번호가 클수록 (아래에 있을수록) 앞에 그려지도록 설정
-                        sr.sortingOrder = y * 10;
-                    }
-
-                    // 스폰 지점(S)인 경우 위치 저장
-                    if (key == "S")
-                    {
-                        spawnPoint = tileGO.transform;
-                    }
+                if (key == "S")
+                {
+                    SpawnPoint = tileGO.transform;
+                }
+                else if (key == "H")
+                {
+                    EndPoint = tileGO.transform;
                 }
             }
         }
 
-        if (spawnPoint == null)
-        {
-            Debug.LogError("[GridManager] 맵에 스폰 지점(S)이 없습니다!");
-        }
+        if (SpawnPoint == null) Debug.LogError("[GridManager] 맵에 스폰 지점(S)이 없습니다!");
+        if (EndPoint == null) Debug.LogError("[GridManager] 맵에 목표 지점(E)이 없습니다!");
+
+        // 생성된 그리드와 경계 정보를 Pathfinding에 전달
+        Pathfinding.Instance.SetGrid(tileGrid, bgCollider.bounds);
     }
 }
