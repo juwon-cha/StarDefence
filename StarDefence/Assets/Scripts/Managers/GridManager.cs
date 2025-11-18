@@ -6,7 +6,7 @@ using System.Linq;
 [System.Serializable]
 public class TileMapping
 {
-    public string tileKey; // "S", "B", "X", "H"
+    public string tileKey; // "S", "B", "X", "F", "H"
     public GameObject tilePrefab; // 연결할 프리팹
 }
 
@@ -110,6 +110,14 @@ public class GridManager : Singleton<GridManager>
 
                     GameObject tileGO = Instantiate(prefab, position, Quaternion.identity);
                     tileGO.transform.SetParent(this.transform);
+
+                    // 타일의 y 위치에 따라 렌더링 순서 동적 지정
+                    SpriteRenderer sr = tileGO.GetComponent<SpriteRenderer>();
+                    if (sr != null)
+                    {
+                        // 행(y) 번호가 클수록 (아래에 있을수록) 앞에 그려지도록 설정
+                        sr.sortingOrder = y * 10;
+                    }
 
                     // 스폰 지점(S)인 경우 위치 저장
                     if (key == "S")
