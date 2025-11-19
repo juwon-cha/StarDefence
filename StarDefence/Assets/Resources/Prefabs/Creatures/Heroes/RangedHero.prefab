@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 569325630761303995}
   - component: {fileID: 5318389034266014111}
-  - component: {fileID: -8667002186728964888}
+  - component: {fileID: 2093992827852218775}
   m_Layer: 0
   m_Name: RangedHero
   m_TagString: Untagged
@@ -85,7 +85,7 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!114 &-8667002186728964888
+--- !u!114 &2093992827852218775
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -94,6 +94,6 @@ MonoBehaviour:
   m_GameObject: {fileID: 2606534362618130263}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9775399866f528640920cbf80dc9ffa4, type: 3}
+  m_Script: {fileID: 11500000, guid: ec40d3986a4559e41a2d91464db190c2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 

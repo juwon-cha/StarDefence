@@ -43,17 +43,12 @@ public class GameManager : Singleton<GameManager>
     // 타일이 클릭되었을 때 호출될 이벤트 핸들러
     private void HandleTileClicked(Tile tile)
     {
-        // 빌드 모드가 아니거나 타일이 유효하지 않으면 아무것도 하지 않음
-        if (Status != GameStatus.Build)
-        {
-            return;
-        }
+        // 타일이 유효하지 않으면 아무것도 하지 않음
         if (tile == null || !tile.IsPlaceable || tile.PlacedHero != null)
         {
             return;
         }
         
-        // 새로운 범용 ShowPopup 메서드 사용
         var confirmUI = UIManager.Instance.ShowPopup<PlaceHeroConfirmUI>();
         if (confirmUI != null)
         {
@@ -77,12 +72,12 @@ public class GameManager : Singleton<GameManager>
             return;
         }
 
-        // Instantiate and initialize the hero
+        // 영웅 초기화
         GameObject heroGO = Instantiate(heroData.heroPrefab, tile.transform.position, Quaternion.identity);
         Hero hero = heroGO.GetComponent<Hero>();
         hero.Init(heroData, tile);
 
-        // Update the tile
+        // 타일에 영웅 배치 정보 설정
         tile.SetHero(hero);
 
         Debug.Log($"{heroData.heroName} placed!");

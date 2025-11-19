@@ -39,11 +39,14 @@ public class WaveManager : Singleton<WaveManager>
 
     private void StartNextWaveFlow()
     {
+        // 게임 상태 Wave로 변경하여 영웅들이 공격 시작
+        GameManager.Instance.ChangeStatus(GameStatus.Wave);
+        
         currentWaveIndex++;
         if (currentWaveIndex < waves.Count)
         {
             if (UIManager.Instance.MainHUD != null)
-                UIManager.Instance.MainHUD.UpdateWaveText(currentWaveIndex, waves.Count);
+                UIManager.Instance.MainHUD.UpdateWaveText(currentWaveIndex + 1, waves.Count);
             
             StartCoroutine(SpawnWave(waves[currentWaveIndex]));
         }
@@ -58,9 +61,12 @@ public class WaveManager : Singleton<WaveManager>
 
     private void PrepareForNextWave()
     {
+        // 게임 상태 Build로 변경하여 다음 웨이브 전까지 영웅 배치 등을 할 수 있도록 함
+        GameManager.Instance.ChangeStatus(GameStatus.Build);
+
         if (currentWaveIndex + 1 < waves.Count)
         {
-            // UIManager에게 다음 웨이브 버튼 표시를 요청 (새로운 ShowPopup 메서드 사용)
+            // 다음 웨이브 버튼 표시
             NextWaveButtonUI button = UIManager.Instance.ShowPopup<NextWaveButtonUI>();
 
             if (button != null)
