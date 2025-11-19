@@ -12,7 +12,7 @@ public class Tile : MonoBehaviour, IPointerClickHandler
     public int GridX;
     public int GridY;
 
-    // Hero Placement
+    // 영웅 배치
     public bool IsPlaceable { get; private set; }
     public Hero PlacedHero { get; private set; }
 

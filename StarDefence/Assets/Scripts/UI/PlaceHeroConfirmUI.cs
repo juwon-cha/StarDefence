@@ -32,11 +32,7 @@ public class PlaceHeroConfirmUI : UI_Popup
         // TODO: Temp
         costText.text = "0";
 
-        // 타일 위쪽에 UI 위치 설정
-        Vector3 screenPos = Camera.main.WorldToScreenPoint(tile.transform.position + new Vector3(0, 1, 0)); // Position slightly above the tile
-        if (screenPos.z > 0)
-        {
-            transform.position = screenPos;
-        }
+        // 타일 위쪽에 UI 위치 설정 (World Space Canvas에 바로 위치 지정)
+        transform.position = tile.transform.position + new Vector3(0, 1, 0);
     }
 }

@@ -4,10 +4,14 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
+// 팝업이 표시될 캔버스 타입을 정의
+public enum UICanvasType { ScreenSpaceOverlay, WorldSpace }
+
 public class UIManager : Singleton<UIManager>
 {
     public Canvas MainCanvas { get; private set; }
     public Canvas PopupCanvas { get; private set; }
+    public Canvas WorldSpaceCanvas { get; private set; } // 새로운 월드 공간 캔버스 추가
 
     // 활성화된 팝업의 순서를 관리하는 스택
     private readonly Stack<UI_Popup> popupStack = new Stack<UI_Popup>();
@@ -27,11 +31,17 @@ public class UIManager : Singleton<UIManager>
         EnsureEventSystem();
         CreateMainCanvas();
         CreatePopupCanvas();
+        CreateWorldSpaceCanvas(); // 월드 공간 캔버스 생성
     }
 
     void Start()
     {
-        MainHUD = ShowSceneUI<HUD>("HUD");
+        MainHUD = ShowSceneUI<HUD>(Constants.HUD_UI_NAME);
+        // WorldSpaceCanvas의 World Camera 설정
+        if (WorldSpaceCanvas != null && Camera.main != null)
+        {
+            WorldSpaceCanvas.worldCamera = Camera.main;
+        }
     }
 
     private void EnsureEventSystem()
@@ -75,23 +85,38 @@ public class UIManager : Singleton<UIManager>
         canvasGO.AddComponent<GraphicRaycaster>();
         DontDestroyOnLoad(canvasGO);
     }
+
+    // 새로운 월드 공간 캔버스 생성 메서드
+    private void CreateWorldSpaceCanvas()
+    {
+        GameObject canvasGO = new GameObject { name = "WorldSpaceCanvas" };
+        WorldSpaceCanvas = canvasGO.AddComponent<Canvas>();
+        WorldSpaceCanvas.renderMode = RenderMode.WorldSpace; // 월드 공간 렌더링
+        WorldSpaceCanvas.sortingOrder = 1000;
+        
+        // WorldSpaceCanvas의 기본 스케일 설정(자식 UI가 적절한 크기로 보이도록)
+        // 적절한 스케일 값은 게임 해상도 및 UI 디자인에 따라 달라질 수 있음
+        canvasGO.transform.localScale = new Vector3(0.05f, 0.05f, 0.05f);
+
+        canvasGO.AddComponent<GraphicRaycaster>();
+    }
     #endregion
 
     #region UI 관리 메서드
-    public T ShowSceneUI<T>(string name = null) where T : UI_Scene
+    public T ShowSceneUI<T>(string uiName) where T : UI_Scene // uiName 매개변수 추가
     {
-        if (string.IsNullOrEmpty(name)) name = typeof(T).Name;
+        if (string.IsNullOrEmpty(uiName)) uiName = typeof(T).Name; // null 또는 빈 문자열이면 타입 이름 사용
 
-        if (sceneCache.TryGetValue(name, out var sceneUI) && sceneUI != null)
+        if (sceneCache.TryGetValue(uiName, out var sceneUI) && sceneUI != null)
         {
             sceneUI.gameObject.SetActive(true);
             return sceneUI as T;
         }
 
-        T ui = GetUI<T>(name, MainCanvas.transform);
+        T ui = GetUI<T>(uiName, MainCanvas.transform);
         if (ui != null)
         {
-            sceneCache[name] = ui;
+            sceneCache[uiName] = ui;
         }
         return ui;
     }
@@ -99,26 +124,52 @@ public class UIManager : Singleton<UIManager>
     /// <summary>
     /// 팝업 UI를 보여줌. 이미 생성된 팝업이 있다면 재사용
     /// </summary>
-    public T ShowPopup<T>() where T : UI_Popup
+    /// <param name="uiName">표시할 UI 프리팹의 이름</param>
+    /// <param name="canvasType">팝업이 올라갈 캔버스의 종류</param>
+    public T ShowPopup<T>(string uiName, UICanvasType canvasType = UICanvasType.ScreenSpaceOverlay) where T : UI_Popup // uiName 매개변수 추가
     {
+        if (string.IsNullOrEmpty(uiName))
+        {
+            uiName = typeof(T).Name;
+        }
+
+        Transform targetParent = (canvasType == UICanvasType.WorldSpace) ? WorldSpaceCanvas.transform : PopupCanvas.transform;
         var popupType = typeof(T);
 
         if (!popupCache.TryGetValue(popupType, out var popup))
         {
-            // 캐시에 없으면 새로 생성
-            popup = GetUI<T>(popupType.Name, PopupCanvas.transform);
+            popup = GetUI<T>(uiName, targetParent);
             if (popup == null) return null;
             popupCache.Add(popupType, popup);
         }
-        
+
+        // 캐시에서 가져왔더라도 부모가 다르면 재설정
+        if (popup.transform.parent != targetParent)
+        {
+            popup.transform.SetParent(targetParent, false);
+        }
+
+        // 월드 스페이스 UI의 크기 문제 해결을 위해 스케일 초기화
+        popup.transform.localScale = Vector3.one;
+
+        // 팝업 활성화 및 스택 관리
         popup.gameObject.SetActive(true);
-        
-        // 스택에서 해당 팝업을 제거했다가 다시 Push하여 가장 위로 올림
         RebuildStackAndExclude(popup);
         popupStack.Push(popup);
 
         return popup as T;
     }
+
+    /// <summary>
+    /// 월드 공간 팝업 UI를 보여줌. 이미 생성된 팝업이 있다면 재사용
+    /// 이 메서드는 항상 WorldSpaceCanvas에 UI 생성
+    /// </summary>
+    /// <param name="uiName">표시할 UI 프리팹의 이름</param>
+    public T ShowWorldSpacePopup<T>(string uiName) where T : UI_Popup
+    {
+        return ShowPopup<T>(uiName, UICanvasType.WorldSpace);
+    }
+
 
     /// <summary>
     /// 가장 위에 있는 팝업 닫기
@@ -172,18 +223,20 @@ public class UIManager : Singleton<UIManager>
         }
     }
 
-    private T GetUI<T>(string name, Transform parent = null) where T : UI_Base
+    private T GetUI<T>(string uiName, Transform parent = null) where T : UI_Base // uiName 매개변수 추가
     {
-        if (!prefabCache.TryGetValue(name, out var prefab))
+        if (!prefabCache.TryGetValue(uiName, out var prefab)) // uiName을 키로 사용
         {
-            string path = $"Prefabs/UI/{(typeof(T).IsSubclassOf(typeof(UI_Popup)) ? "Popup" : "Scene")}/{name}";
+            string subPath = typeof(T).IsSubclassOf(typeof(UI_Popup)) ? Constants.UI_POPUP_SUB_PATH : Constants.UI_SCENE_SUB_PATH;
+            string path = Constants.UI_ROOT_PATH + subPath + uiName; // Constants 사용
+            
             prefab = Resources.Load<UI_Base>(path);
             if (prefab == null)
             {
                 Debug.LogError($"[UIManager] 프리팹을 로드할 수 없습니다: {path}");
                 return null;
             }
-            prefabCache.Add(name, prefab);
+            prefabCache.Add(uiName, prefab); // uiName을 키로 사용
         }
 
         var uiInstance = Instantiate(prefab, parent);

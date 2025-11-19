@@ -14,8 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   heroName: MeleeHero
   heroDescription: MeleeHero
-  heroPrefab: {fileID: 2606534362618130263, guid: 1420942455c38d64e9c04c3f94560ae1, type: 3}
+  heroPrefabName: MeleeHero
   attackType: 0
-  attackRange: 1
-  attackInterval: 0.5
-  damage: 1
+  attackRange: 2
+  attackInterval: 1
+  damage: 2
+  projectilePrefabName: 

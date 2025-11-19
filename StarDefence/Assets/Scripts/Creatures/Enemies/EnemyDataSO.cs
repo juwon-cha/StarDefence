@@ -6,7 +6,6 @@ public class EnemyDataSO : ScriptableObject
     [Tooltip("적 프리팹 파일명 (확장자 제외)")]
     public string enemyPrefabName;
 
-    // 완전한 프리팹 경로 (Constants.cs의 루트 경로 + 프리팹 파일명)
     public string FullEnemyPrefabPath => Constants.ENEMY_ROOT_PATH + enemyPrefabName;
 
     public float health = 100f;

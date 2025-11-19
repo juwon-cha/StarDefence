@@ -49,7 +49,7 @@ public class GameManager : Singleton<GameManager>
             return;
         }
         
-        var confirmUI = UIManager.Instance.ShowPopup<PlaceHeroConfirmUI>();
+        var confirmUI = UIManager.Instance.ShowWorldSpacePopup<PlaceHeroConfirmUI>(Constants.PLACE_HERO_CONFIRM_UI_NAME);
         if (confirmUI != null)
         {
             confirmUI.SetData(tile);
@@ -73,7 +73,6 @@ public class GameManager : Singleton<GameManager>
             return;
         }
 
-        // PoolManager를 사용하여 영웅 오브젝트를 가져옴 (완전한 경로 사용)
         GameObject heroGO = PoolManager.Instance.Get(heroData.FullHeroPrefabPath);
         if (heroGO == null) return;
         

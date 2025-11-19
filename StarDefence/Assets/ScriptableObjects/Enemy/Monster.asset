@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c0916fe17befb6c4eb78af9aa5cc199a, type: 3}
   m_Name: Monster
   m_EditorClassIdentifier: 
-  enemyPrefab: {fileID: 8866501599297254873, guid: 94a398b6669bcf14d80a88163e215b6a, type: 3}
+  enemyPrefabName: Monster
   health: 10
   speed: 2

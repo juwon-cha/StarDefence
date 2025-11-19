@@ -66,20 +66,17 @@ public class WaveManager : Singleton<WaveManager>
 
         if (currentWaveIndex + 1 < waves.Count)
         {
-            // 다음 웨이브 버튼 표시
-            NextWaveButtonUI button = UIManager.Instance.ShowPopup<NextWaveButtonUI>();
+            // 다음 웨이브 버튼 표시 (WorldSpaceCanvas에 띄움)
+            NextWaveButtonUI button = UIManager.Instance.ShowWorldSpacePopup<NextWaveButtonUI>(Constants.NEXT_WAVE_BUTTON_UI_NAME);
 
             if (button != null)
             {
-                // 스폰 지점 위쪽에 버튼을 위치시키기 위한 좌표 변환
+                // 스폰 지점 위쪽에 버튼을 위치시키기 위한 월드 좌표
                 Vector3 spawnPointPos = GridManager.Instance.SpawnPoint.position;
-                Vector3 worldPosAbove = spawnPointPos + new Vector3(0, 2f, 0); // 월드 좌표 기준 Y축으로 2 유닛 위
-                Vector3 screenPos = Camera.main.WorldToScreenPoint(worldPosAbove);
+                Vector3 worldPosAbove = spawnPointPos + new Vector3(0, 2f, 0); 
 
-                if (screenPos.z > 0) // 카메라 앞에 있을 때만 위치 설정
-                {
-                    button.transform.position = screenPos;
-                }
+                // WorldSpaceCanvas의 자식이므로 월드 좌표를 직접 할당
+                button.transform.position = worldPosAbove;
                 
                 button.Initialize(timeToPressButton, PlayerStartsNextWave);
             }
@@ -142,7 +139,7 @@ public class WaveManager : Singleton<WaveManager>
     #endregion
 
     #region 이벤트 핸들러
-    private void HandleEnemyDestroyed()
+    private void HandleEnemyDestroyed(Enemy enemy) // Enemy 인자 추가
     {
         enemiesAlive--;
 

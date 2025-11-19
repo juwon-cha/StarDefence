@@ -14,8 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   heroName: RangedHero
   heroDescription: RangedHero
-  heroPrefab: {fileID: 2606534362618130263, guid: 6a34c4056dfc4424b8419eb4ae3c876e, type: 3}
+  heroPrefabName: RangedHero
   attackType: 1
-  attackRange: 2
-  attackInterval: 0.3
-  damage: 5
+  attackRange: 3.5
+  attackInterval: 0.6
+  damage: 1
+  projectilePrefabName: HeroProjectile

@@ -1,9 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>
-/// 게임 오브젝트의 재사용을 관리하는 오브젝트 풀링 시스템입니다.
-/// </summary>
 public class PoolManager : Singleton<PoolManager>
 {
     // 데이터
@@ -32,8 +29,10 @@ public class PoolManager : Singleton<PoolManager>
         InitializePoolContainer();
     }
     
-    private void OnApplicationQuit()
+    // 게임 종료 시점에 호출되어 종료 중임을 알림
+    protected override void OnApplicationQuit()
     {
+        base.OnApplicationQuit();
         isShuttingDown = true;
     }
 
