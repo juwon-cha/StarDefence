@@ -3,12 +3,13 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class NextWaveButtonUI : UI_Popup // UI_Scene -> UI_Popup
+public class NextWaveButtonUI : UI_Popup
 {
     [Header("UI Components")]
     [SerializeField] private Image circularSlider;
     [SerializeField] private Text timerText;
     [SerializeField] private Button button;
+    [SerializeField] private Gradient sliderGradient; // 색상 변경을 위한 Gradient
 
     private float countdownDuration;
     private float currentTime;
@@ -58,8 +59,8 @@ public class NextWaveButtonUI : UI_Popup // UI_Scene -> UI_Popup
             if (circularSlider != null)
             {
                 circularSlider.fillAmount = progress;
-                // 진행될수록 녹색 -> 붉은색으로 변경
-                circularSlider.color = Color.Lerp(Color.green, Color.red, progress);
+                // Gradient를 사용해 색상 평가
+                circularSlider.color = sliderGradient.Evaluate(progress);
             }
 
             if (timerText != null)
@@ -88,7 +89,6 @@ public class NextWaveButtonUI : UI_Popup // UI_Scene -> UI_Popup
         }
         StopAllCoroutines();
 
-        // UIManager를 통해 팝업을 닫도록 변경
         UIManager.Instance.ClosePopup(this);
     }
 }

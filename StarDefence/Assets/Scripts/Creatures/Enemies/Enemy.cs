@@ -34,8 +34,12 @@ public class Enemy : MonoBehaviour
         // 체력바 UI가 있으면 풀에 반환하고 참조 해제
         if (_healthBarUIInstance != null)
         {
-            // HealthBarUI가 구독 해제 책임을 가짐
-            PoolManager.Instance.Release(_healthBarUIInstance.gameObject);
+            // 어플리케이션 종료 시 PoolManager가 먼저 파괴될 수 있으므로 null 체크
+            if (PoolManager.Instance != null)
+            {
+                // HealthBarUI가 구독 해제 책임을 가짐
+                PoolManager.Instance.Release(_healthBarUIInstance.gameObject);
+            }
             _healthBarUIInstance = null;
         }
     }
