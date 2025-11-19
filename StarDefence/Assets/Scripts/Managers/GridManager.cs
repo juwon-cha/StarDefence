@@ -110,7 +110,7 @@ public class GridManager : Singleton<GridManager>
                 
                 Tile tileComponent = tileGO.AddComponent<Tile>();
                 bool isWalkable = (key == "S" || key == "H" || key == "P");
-                tileComponent.SetTileData(isWalkable, position, x, y);
+                tileComponent.SetTileData(key, isWalkable, position, x, y);
                 tileGrid[x, y] = tileComponent;
 
                 SpriteRenderer sr = tileGO.GetComponent<SpriteRenderer>();

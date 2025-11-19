@@ -30,7 +30,7 @@ public class Pathfinding : Singleton<Pathfinding>
         Tile startTile = TileFromWorldPoint(startPos);
         Tile targetTile = TileFromWorldPoint(targetPos);
 
-        if (startTile == null || targetTile == null || !targetTile.isWalkable)
+        if (startTile == null || targetTile == null || !targetTile.IsWalkable)
         {
             Debug.LogWarning("[Pathfinding] 시작 또는 목적지 타일을 찾을 수 없거나, 목적지가 이동 불가능한 지역입니다.");
             return null;
@@ -61,7 +61,7 @@ public class Pathfinding : Singleton<Pathfinding>
 
             foreach (Tile neighbour in GetNeighbours(currentTile))
             {
-                if (!neighbour.isWalkable || closedSet.Contains(neighbour))
+                if (!neighbour.IsWalkable || closedSet.Contains(neighbour))
                 {
                     continue;
                 }
@@ -116,8 +116,8 @@ public class Pathfinding : Singleton<Pathfinding>
 
         for (int i = 0; i < 4; i++)
         {
-            int checkX = tile.gridX + xOffsets[i];
-            int checkY = tile.gridY + yOffsets[i];
+            int checkX = tile.GridX + xOffsets[i];
+            int checkY = tile.GridY + yOffsets[i];
 
             if (checkX >= 0 && checkX < gridWidth && checkY >= 0 && checkY < gridHeight)
             {
@@ -133,8 +133,8 @@ public class Pathfinding : Singleton<Pathfinding>
     /// </summary>
     private int GetDistance(Tile tileA, Tile tileB)
     {
-        int dstX = Mathf.Abs(tileA.gridX - tileB.gridX);
-        int dstY = Mathf.Abs(tileA.gridY - tileB.gridY);
+        int dstX = Mathf.Abs(tileA.GridX - tileB.GridX);
+        int dstY = Mathf.Abs(tileA.GridY - tileB.GridY);
         return 10 * (dstX + dstY);
     }
 

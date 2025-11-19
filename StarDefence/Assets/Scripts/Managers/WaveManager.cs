@@ -14,7 +14,7 @@ public class WaveManager : Singleton<WaveManager>
     private int enemiesAlive = 0;
     private bool isSpawning = false;
 
-    #region Unity Lifecycle
+    #region 유니티 생명주기
     void OnEnable()
     {
         Enemy.OnEnemyDestroyed += HandleEnemyDestroyed;
@@ -31,7 +31,7 @@ public class WaveManager : Singleton<WaveManager>
     }
     #endregion
 
-    #region Wave Flow
+    #region 웨이브 관리
     public void PlayerStartsNextWave()
     {
         StartNextWaveFlow();
@@ -60,8 +60,8 @@ public class WaveManager : Singleton<WaveManager>
     {
         if (currentWaveIndex + 1 < waves.Count)
         {
-            // UIManager에게 다음 웨이브 버튼 표시를 요청
-            NextWaveButtonUI button = UIManager.Instance.ShowSceneUI<NextWaveButtonUI>("NextWaveButtonUI");
+            // UIManager에게 다음 웨이브 버튼 표시를 요청 (새로운 ShowPopup 메서드 사용)
+            NextWaveButtonUI button = UIManager.Instance.ShowPopup<NextWaveButtonUI>();
 
             if (button != null)
             {
@@ -85,7 +85,7 @@ public class WaveManager : Singleton<WaveManager>
     }
     #endregion
 
-    #region Coroutines
+    #region 코루틴
     private IEnumerator WaitForHUDAndStart()
     {
         yield return new WaitUntil(() => UIManager.Instance != null && UIManager.Instance.MainHUD != null);
@@ -128,7 +128,7 @@ public class WaveManager : Singleton<WaveManager>
     }
     #endregion
 
-    #region Event Handlers
+    #region 이벤트 핸들러
     private void HandleEnemyDestroyed()
     {
         enemiesAlive--;

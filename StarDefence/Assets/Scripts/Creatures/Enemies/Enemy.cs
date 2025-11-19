@@ -41,7 +41,7 @@ public class Enemy : MonoBehaviour
         }
 
         // 현재 목표 경유지(waypoint)를 향해 이동
-        Vector3 currentWaypoint = path[waypointIndex].worldPosition;
+        Vector3 currentWaypoint = path[waypointIndex].WorldPosition;
         transform.position = Vector3.MoveTowards(transform.position, currentWaypoint, speed * Time.deltaTime);
 
         // 현재 경유지에 도달하면 다음 경유지로 목표 변경

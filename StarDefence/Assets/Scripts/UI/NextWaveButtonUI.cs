@@ -3,7 +3,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class NextWaveButtonUI : UI_Scene
+public class NextWaveButtonUI : UI_Popup // UI_Scene -> UI_Popup
 {
     [Header("UI Components")]
     [SerializeField] private Image circularSlider;
@@ -25,8 +25,10 @@ public class NextWaveButtonUI : UI_Scene
         this.currentTime = duration;
         this.onComplete = onCompleteCallback;
 
+        // 리스너 중복 등록 방지
         if (button != null)
         {
+            button.onClick.RemoveAllListeners();
             button.onClick.AddListener(OnButtonClicked);
         }
 
@@ -86,6 +88,7 @@ public class NextWaveButtonUI : UI_Scene
         }
         StopAllCoroutines();
 
-        gameObject.SetActive(false);
+        // UIManager를 통해 팝업을 닫도록 변경
+        UIManager.Instance.ClosePopup(this);
     }
 }
