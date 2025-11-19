@@ -46,7 +46,7 @@ public class WaveManager : Singleton<WaveManager>
         if (currentWaveIndex < waves.Count)
         {
             if (UIManager.Instance.MainHUD != null)
-                UIManager.Instance.MainHUD.UpdateWaveText(currentWaveIndex + 1, waves.Count);
+                UIManager.Instance.MainHUD.UpdateWaveText(currentWaveIndex, waves.Count);
             
             StartCoroutine(SpawnWave(waves[currentWaveIndex]));
         }
@@ -123,7 +123,14 @@ public class WaveManager : Singleton<WaveManager>
                     yield break;
                 }
 
-                GameObject enemyGO = Instantiate(enemyInfo.enemyData.enemyPrefab, spawnPoint.position, Quaternion.identity);
+                // PoolManager를 사용하여 몬스터 오브젝트를 가져옴
+                GameObject enemyGO = PoolManager.Instance.Get(enemyInfo.enemyData.FullEnemyPrefabPath);
+                if(enemyGO == null) continue;
+
+                // 위치와 회전 초기화
+                enemyGO.transform.position = spawnPoint.position;
+                enemyGO.transform.rotation = Quaternion.identity;
+                
                 enemyGO.GetComponent<Enemy>().Initialize(enemyInfo.enemyData, endPoint);
 
                 yield return new WaitForSeconds(currentWave.spawnInterval);

@@ -12,6 +12,13 @@ public class Enemy : MonoBehaviour
     private Transform endPoint;
     private List<Tile> path;
     private int waypointIndex = 0;
+    
+    private void OnDisable()
+    {
+        // 오브젝트가 풀에 반환될 때 상태 초기화
+        path = null;
+        waypointIndex = 0;
+    }
 
     /// <summary>
     /// 적을 초기화하고 스탯과 목표를 설정한 후 경로 찾음
@@ -27,8 +34,8 @@ public class Enemy : MonoBehaviour
         if (path == null || path.Count == 0)
         {
             Debug.LogError($"경로를 찾을 수 없습니다! {name}", this);
-            // 경로가 없으면 바로 파괴하거나 다른 로직 수행?
-            Destroy(gameObject);
+            // 경로가 없으면 풀에 반환
+            PoolManager.Instance.Release(gameObject);
         }
     }
 
@@ -59,7 +66,7 @@ public class Enemy : MonoBehaviour
             {
                 // TODO: 지휘관 체력 감소 로직 추가
                 OnEnemyDestroyed?.Invoke();
-                Destroy(gameObject);
+                PoolManager.Instance.Release(gameObject);
             }
         }
     }
@@ -71,7 +78,7 @@ public class Enemy : MonoBehaviour
         {
             // TODO: 적 사망 시 보상(골드 등) 지급 로직 추가
             OnEnemyDestroyed?.Invoke();
-            Destroy(gameObject);
+            PoolManager.Instance.Release(gameObject);
         }
     }
 }

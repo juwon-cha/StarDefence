@@ -66,14 +66,22 @@ public class GameManager : Singleton<GameManager>
 
         HeroDataSO heroData = tier1Heroes[Random.Range(0, tier1Heroes.Count)];
 
-        if (heroData.heroPrefab == null)
+        // heroData.FullHeroPrefabPath가 비어있는지 체크
+        if (string.IsNullOrEmpty(heroData.FullHeroPrefabPath))
         {
-            Debug.LogError($"Selected hero '{heroData.heroName}' has no prefab!");
+            Debug.LogError($"Selected hero '{heroData.heroName}' has no valid prefab path in its HeroDataSO!");
             return;
         }
 
+        // PoolManager를 사용하여 영웅 오브젝트를 가져옴 (완전한 경로 사용)
+        GameObject heroGO = PoolManager.Instance.Get(heroData.FullHeroPrefabPath);
+        if (heroGO == null) return;
+        
+        // 위치와 회전 초기화
+        heroGO.transform.position = tile.transform.position;
+        heroGO.transform.rotation = Quaternion.identity;
+
         // 영웅 초기화
-        GameObject heroGO = Instantiate(heroData.heroPrefab, tile.transform.position, Quaternion.identity);
         Hero hero = heroGO.GetComponent<Hero>();
         hero.Init(heroData, tile);
 
