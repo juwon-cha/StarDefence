@@ -440,7 +440,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   costText: {fileID: 3646109392553102042}
+  resourceIcon: {fileID: 2512739131398003316}
   confirmButton: {fileID: 5228651219506869022}
+  confirmButtonText: {fileID: 4844758214340630357}
 --- !u!1 &8540958482432067608
 GameObject:
   m_ObjectHideFlags: 0

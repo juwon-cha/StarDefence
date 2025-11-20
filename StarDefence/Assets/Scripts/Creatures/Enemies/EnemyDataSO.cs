@@ -9,5 +9,6 @@ public class EnemyDataSO : CreatureDataSO
     public string FullEnemyPrefabPath => Constants.ENEMY_ROOT_PATH + enemyPrefabName;
 
     public float speed = 2f;
-    // TODO: 다른 스탯(보상 등) 추가?
+    [Tooltip("이 적을 처치했을 때 얻는 골드")]
+    public int goldReward = 5;
 }

@@ -13,6 +13,14 @@ public enum GameStatus
 
 public class GameManager : Singleton<GameManager>
 {
+    [Header("Game Resources")]
+    [SerializeField] private int initialGold = 100;
+    [SerializeField] private int initialMinerals = 0;
+    public int Gold { get; private set; }
+    public int Minerals { get; private set; }
+    public event System.Action<int> OnGoldChanged;
+    public event System.Action<int> OnMineralsChanged;
+
     [Header("Commander Data")]
     public List<CommanderDataSO> commanders;
 
@@ -20,6 +28,7 @@ public class GameManager : Singleton<GameManager>
     public List<HeroDataSO> tier1Heroes;
 
     public Commander Commander { get; private set; }
+    private List<Hero> placedHeroes = new List<Hero>();
 
     public GameStatus Status { get; private set; }
     public event System.Action<GameStatus> OnStatusChanged;
@@ -28,16 +37,20 @@ public class GameManager : Singleton<GameManager>
     {
         base.Awake();
         Status = GameStatus.Ready;
+        Gold = initialGold;
+        Minerals = initialMinerals;
     }
 
     private void OnEnable()
     {
         Tile.OnTileClicked += HandleTileClicked;
+        Enemy.OnEnemyDestroyed += HandleEnemyDestroyed;
     }
 
     private void OnDisable()
     {
         Tile.OnTileClicked -= HandleTileClicked;
+        Enemy.OnEnemyDestroyed -= HandleEnemyDestroyed;
     }
 
     private void Start()
@@ -45,6 +58,9 @@ public class GameManager : Singleton<GameManager>
         Time.timeScale = 1f;
         SpawnCommander();
         ChangeStatus(GameStatus.Build);
+        // UI를 위한 초기값 통지
+        OnGoldChanged?.Invoke(Gold);
+        OnMineralsChanged?.Invoke(Minerals);
     }
     
     private void SpawnCommander()
@@ -55,7 +71,7 @@ public class GameManager : Singleton<GameManager>
             return;
         }
 
-        CommanderDataSO commanderData = commanders[0]; // 기본적으로 첫 번째 지휘관 생성
+        CommanderDataSO commanderData = commanders[0];
         GameObject commanderGO = PoolManager.Instance.Get(commanderData.FullPrefabPath);
         if (commanderGO == null) return;
 
@@ -70,54 +86,192 @@ public class GameManager : Singleton<GameManager>
         commanderGO.transform.rotation = Quaternion.identity;
     }
 
-    // 타일이 클릭되었을 때 호출될 이벤트 핸들러
     private void HandleTileClicked(Tile tile)
     {
-        // 타일이 유효하지 않으면 아무것도 하지 않음
-        if (tile == null || !tile.IsPlaceable || tile.PlacedHero != null)
+        if (tile == null) return;
+
+        if (tile.PlacedHero != null)
         {
-            return;
+            TryUpgradeHero(tile.PlacedHero);
         }
-        
-        var confirmUI = UIManager.Instance.ShowWorldSpacePopup<PlaceHeroConfirmUI>(Constants.PLACE_HERO_CONFIRM_UI_NAME);
-        if (confirmUI != null)
+        else if (tile.IsPlaceable)
         {
-            confirmUI.SetData(tile);
+            int cost = tier1Heroes.Any() ? tier1Heroes[0].placementCost : 0;
+            var confirmUI = UIManager.Instance.ShowWorldSpacePopup<PlaceHeroConfirmUI>(Constants.PLACE_HERO_CONFIRM_UI_NAME);
+            if (confirmUI != null)
+            {
+                confirmUI.SetDataForPlacement(tile, cost);
+            }
         }
     }
+
+    #region 재화 관리
+    public void AddGold(int amount)
+    {
+        Gold += amount;
+        OnGoldChanged?.Invoke(Gold);
+    }
+
+    public bool SpendGold(int amount)
+    {
+        if (Gold >= amount)
+        {
+            Gold -= amount;
+            OnGoldChanged?.Invoke(Gold);
+            return true;
+        }
+
+        Debug.Log("골드가 부족합니다.");
+        return false;
+    }
+    
+    public void AddMinerals(int amount)
+    {
+        Minerals += amount;
+        OnMineralsChanged?.Invoke(Minerals);
+    }
+
+    public bool SpendMinerals(int amount)
+    {
+        if (Minerals >= amount)
+        {
+            Minerals -= amount;
+            OnMineralsChanged?.Invoke(Minerals);
+            return true;
+        }
+
+        Debug.Log("미네랄이 부족합니다.");
+        return false;
+    }
+
+    private void HandleEnemyDestroyed(Enemy enemy)
+    {
+        // 파괴된 적의 골드 보상을 GameManager에 추가
+        if (enemy.CreatureData is EnemyDataSO enemyData)
+        {
+            AddGold(enemyData.goldReward);
+        }
+    }
+    #endregion
+
+    #region 영웅 배치 및 업그레이드
 
     public void ConfirmPlaceHero(Tile tile)
     {
         if (!tier1Heroes.Any())
         {
-            Debug.LogWarning("Tier 1 Heroes list is empty! Cannot place hero.");
+            Debug.LogWarning("1티어 영웅 목록이 비어있습니다! 영웅을 배치할 수 없습니다.");
             return;
         }
 
         HeroDataSO heroData = tier1Heroes[Random.Range(0, tier1Heroes.Count)];
+        
+        if (!SpendGold(heroData.placementCost))
+        {
+            Debug.Log("배치 실패: 골드가 부족합니다.");
+            return;
+        }
 
         if (string.IsNullOrEmpty(heroData.FullHeroPrefabPath))
         {
-            Debug.LogError($"Selected hero '{heroData.heroName}' has no valid prefab path in its HeroDataSO!");
+            Debug.LogError($"선택된 영웅 '{heroData.heroName}'의 HeroDataSO에 유효한 프리팹 경로가 없습니다!");
             return;
         }
 
         GameObject heroGO = PoolManager.Instance.Get(heroData.FullHeroPrefabPath);
-        if (heroGO == null) return;
+        if (heroGO == null)
+        {
+            return;
+        }
         
-        // 위치와 회전 초기화
         heroGO.transform.position = tile.transform.position;
         heroGO.transform.rotation = Quaternion.identity;
 
-        // 영웅 초기화
         Hero hero = heroGO.GetComponent<Hero>();
         hero.Init(heroData, tile);
-
-        // 타일에 영웅 배치 정보 설정
+        
         tile.SetHero(hero);
+        placedHeroes.Add(hero);
 
-        Debug.Log($"{heroData.heroName} placed!");
+        Debug.Log($"{heroData.heroName} 배치됨! 총 배치된 영웅 수: {placedHeroes.Count}");
     }
+
+    private void TryUpgradeHero(Hero heroToUpgrade)
+    {
+        if (heroToUpgrade.HeroData.nextTierHero == null)
+        {
+            Debug.Log("이 영웅은 최고 등급입니다.");
+            return;
+        }
+
+        if (Minerals < heroToUpgrade.HeroData.upgradeCost)
+        {
+            Debug.Log("업그레이드에 필요한 미네랄이 부족합니다.");
+            return;
+        }
+
+        Hero mergePartner = placedHeroes.FirstOrDefault(h => 
+            h != heroToUpgrade && h.HeroData == heroToUpgrade.HeroData);
+
+        if (mergePartner == null)
+        {
+            Debug.Log("융합할 같은 종류의 다른 영웅이 없습니다.");
+            return;
+        }
+
+        var confirmUI = UIManager.Instance.ShowWorldSpacePopup<PlaceHeroConfirmUI>(Constants.PLACE_HERO_CONFIRM_UI_NAME);
+        if (confirmUI != null)
+        {
+            confirmUI.SetDataForUpgrade(heroToUpgrade, mergePartner);
+        }
+    }
+
+    public void ConfirmUpgradeHero(Hero heroToUpgrade, Hero mergePartner)
+    {
+        if (!SpendMinerals(heroToUpgrade.HeroData.upgradeCost))
+        {
+            Debug.Log("업그레이드 실패: 미네랄이 부족합니다.");
+            return;
+        }
+
+        HeroDataSO nextTierHeroData = heroToUpgrade.HeroData.nextTierHero;
+        Tile targetTile = heroToUpgrade.placedTile;
+
+        RemoveHero(heroToUpgrade);
+        RemoveHero(mergePartner);
+        
+        GameObject newHeroGO = PoolManager.Instance.Get(nextTierHeroData.FullHeroPrefabPath);
+        if (newHeroGO == null)
+        {
+            return;
+        }
+
+        newHeroGO.transform.position = targetTile.transform.position;
+        newHeroGO.transform.rotation = Quaternion.identity;
+        
+        Hero newHero = newHeroGO.GetComponent<Hero>();
+        newHero.Init(nextTierHeroData, targetTile);
+        
+        targetTile.SetHero(newHero);
+        placedHeroes.Add(newHero);
+
+        Debug.Log($"업그레이드 성공! {nextTierHeroData.heroName} 생성됨. 총 배치된 영웅 수: {placedHeroes.Count}");
+    }
+    
+    private void RemoveHero(Hero hero)
+    {
+        if (hero == null)
+        {
+            return;
+        }
+        
+        hero.placedTile.ClearHero();
+        placedHeroes.Remove(hero);
+        hero.Cleanup();
+        PoolManager.Instance.Release(hero.gameObject);
+    }
+
+    #endregion
 
     public void ChangeStatus(GameStatus newStatus)
     {
@@ -139,18 +293,19 @@ public class GameManager : Singleton<GameManager>
     {
         if (Status == GameStatus.GameOver)
         {
-            return; // 중복 호출 방지
+            return;
         }
 
         ChangeStatus(GameStatus.GameOver);
-        Time.timeScale = 0f; // 게임 일시정지
+        Time.timeScale = 0f;
         
         var resultUI = UIManager.Instance.ShowPopup<GameResultUI>("GameResultUI");
         if (resultUI != null)
         {
             resultUI.SetTitle("GAME OVER");
         }
-        Debug.Log("Game Over!");
+
+        Debug.Log("게임 오버!");
     }
 
     public void GameVictory()
@@ -161,13 +316,14 @@ public class GameManager : Singleton<GameManager>
         }
 
         ChangeStatus(GameStatus.Victory);
-        Time.timeScale = 0f; // 게임 일시정지
+        Time.timeScale = 0f;
 
         var resultUI = UIManager.Instance.ShowPopup<GameResultUI>("GameResultUI");
         if (resultUI != null)
         {
             resultUI.SetTitle("VICTORY");
         }
-        Debug.Log("All waves cleared! Victory!");
+
+        Debug.Log("모든 웨이브 클리어! 승리!");
     }
 }

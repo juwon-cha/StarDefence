@@ -17,17 +17,10 @@ public abstract class Hero : Creature
     protected override void Start()
     {
         base.Start();
-        
-        GameManager.Instance.OnStatusChanged -= OnGameStatusChanged;
-        GameManager.Instance.OnStatusChanged += OnGameStatusChanged;
-
-        // 현재 게임 상태에 따라 초기 동작 결정
-        OnGameStatusChanged(GameManager.Instance.Status);
     }
 
     private void OnDestroy()
     {
-        // GameManager가 먼저 파괴되었을 수 있으므로 null 체크
         if (GameManager.Instance != null)
         {
             GameManager.Instance.OnStatusChanged -= OnGameStatusChanged;
@@ -72,11 +65,34 @@ public abstract class Hero : Creature
         enemyLayerMask = LayerMask.GetMask("Enemy");
         attackTimer = 0;
         
-        GameManager.Instance.OnStatusChanged -= OnGameStatusChanged;
+        // 이벤트를 다시 구독하기 전에 이전 구독을 해제하여 중복 방지
+        if(GameManager.Instance != null)
+        {
+            GameManager.Instance.OnStatusChanged -= OnGameStatusChanged;
+        }
         GameManager.Instance.OnStatusChanged += OnGameStatusChanged;
 
         // 현재 게임 상태에 따라 초기 동작 결정
         OnGameStatusChanged(GameManager.Instance.Status);
+    }
+    
+    /// <summary>
+    /// 영웅이 풀에 반환되거나 제거될 때 호출될 정리 메서드
+    /// </summary>
+    public void Cleanup()
+    {
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.OnStatusChanged -= OnGameStatusChanged;
+        }
+        
+        if (scanCoroutine != null)
+        {
+            StopCoroutine(scanCoroutine);
+            scanCoroutine = null;
+        }
+        
+        currentTarget = null;
     }
     
     /// <summary>

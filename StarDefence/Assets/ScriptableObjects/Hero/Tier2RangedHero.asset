@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3cb09eabb1e6be4418a69013bd4a59f4, type: 3}
+  m_Name: Tier2RangedHero
+  m_EditorClassIdentifier: 
+  maxHealth: 100
+  attackDamage: 15
+  attackRange: 3.5
+  attackInterval: 0.6
+  heroName: Tier2RangedHero
+  heroDescription: Tier2RangedHero
+  heroPrefabName: Tier2RangedHero
+  attackType: 1
+  tier: 2
+  projectilePrefabName: HeroProjectile
+  upgradeCost: 10
+  nextTierHero: {fileID: 11400000, guid: 3c87197bd210307438fd9adb853e45ad, type: 2}

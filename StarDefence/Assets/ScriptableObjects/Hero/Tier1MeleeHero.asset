@@ -10,13 +10,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3cb09eabb1e6be4418a69013bd4a59f4, type: 3}
-  m_Name: MeleeHero
+  m_Name: Tier1MeleeHero
   m_EditorClassIdentifier: 
-  heroName: MeleeHero
-  heroDescription: MeleeHero
-  heroPrefabName: MeleeHero
-  attackType: 0
+  maxHealth: 100
+  attackDamage: 10
   attackRange: 2
   attackInterval: 1
-  damage: 2
+  heroName: Tier1MeleeHero
+  heroDescription: Tier1MeleeHero
+  heroPrefabName: Tier1MeleeHero
+  attackType: 0
+  tier: 1
   projectilePrefabName: 
+  upgradeCost: 10
+  nextTierHero: {fileID: 11400000, guid: 5b8b5647e9f37ae4e8c8d3f5b6b77ddb, type: 2}

@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 5318389034266014111}
   - component: {fileID: 2093992827852218775}
   m_Layer: 0
-  m_Name: RangedHero
+  m_Name: Tier1RangedHero
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -97,3 +97,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ec40d3986a4559e41a2d91464db190c2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  creatureData: {fileID: 11400000, guid: d5e5f720112729445a2929ee4b8bfb82, type: 2}

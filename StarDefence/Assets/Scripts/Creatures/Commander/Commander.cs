@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Linq;
 using UnityEngine;
 
 public abstract class Commander : Creature
@@ -85,7 +84,10 @@ public abstract class Commander : Creature
         foreach (var col in colliders)
         {
             Enemy enemy = col.GetComponent<Enemy>();
-            if (enemy == null) continue;
+            if (enemy == null)
+            {
+                continue;
+            }
 
             float distanceSqr = (transform.position - enemy.transform.position).sqrMagnitude;
 

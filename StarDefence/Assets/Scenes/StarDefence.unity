@@ -313,6 +313,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isPersistent: 0
+  initialMinerals: 100
   commanders:
   - {fileID: 11400000, guid: 71c9c21831489dd44945d1c1eefbfb38, type: 2}
   tier1Heroes:
