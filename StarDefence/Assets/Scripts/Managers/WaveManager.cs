@@ -61,29 +61,29 @@ public class WaveManager : Singleton<WaveManager>
 
     private void PrepareForNextWave()
     {
-        // 게임 상태 Build로 변경하여 다음 웨이브 전까지 영웅 배치 등을 할 수 있도록 함
+        // 마지막 웨이브가 방금 클리어되었는지 확인
+        if (currentWaveIndex >= waves.Count - 1 && enemiesAlive <= 0 && !isSpawning)
+        {
+            GameManager.Instance.GameVictory();
+            return;
+        }
+
+        // 다음 웨이브 준비를 위해 상태를 Build로 설정
         GameManager.Instance.ChangeStatus(GameStatus.Build);
 
+        // 다음 웨이브가 더 있다면 다음 웨이브 버튼 표시
         if (currentWaveIndex + 1 < waves.Count)
         {
-            // 다음 웨이브 버튼 표시 (WorldSpaceCanvas에 띄움)
             NextWaveButtonUI button = UIManager.Instance.ShowWorldSpacePopup<NextWaveButtonUI>(Constants.NEXT_WAVE_BUTTON_UI_NAME);
 
             if (button != null)
             {
-                // 스폰 지점 위쪽에 버튼을 위치시키기 위한 월드 좌표
                 Vector3 spawnPointPos = GridManager.Instance.SpawnPoint.position;
                 Vector3 worldPosAbove = spawnPointPos + new Vector3(0, 2f, 0); 
 
-                // WorldSpaceCanvas의 자식이므로 월드 좌표를 직접 할당
                 button.transform.position = worldPosAbove;
-                
                 button.Initialize(timeToPressButton, PlayerStartsNextWave);
             }
-        }
-        else
-        {
-            Debug.Log("All waves cleared!");
         }
     }
     #endregion
@@ -112,11 +112,11 @@ public class WaveManager : Singleton<WaveManager>
             for (int i = 0; i < enemyInfo.count; i++)
             {
                 Transform spawnPoint = GridManager.Instance.SpawnPoint;
-                Transform endPoint = GridManager.Instance.EndPoint;
+                Transform commanderTransform = GameManager.Instance.Commander.transform;
 
-                if (spawnPoint == null || endPoint == null)
+                if (spawnPoint == null || commanderTransform == null)
                 {
-                    Debug.LogError("스폰 위치 또는 목표 위치가 GridManager에 설정되지 않았습니다.");
+                    Debug.LogError("Spawn point or Commander not set.");
                     yield break;
                 }
 
@@ -128,7 +128,7 @@ public class WaveManager : Singleton<WaveManager>
                 enemyGO.transform.position = spawnPoint.position;
                 enemyGO.transform.rotation = Quaternion.identity;
                 
-                enemyGO.GetComponent<Enemy>().Initialize(enemyInfo.enemyData, endPoint);
+                enemyGO.GetComponent<Enemy>().Initialize(enemyInfo.enemyData, commanderTransform);
 
                 yield return new WaitForSeconds(currentWave.spawnInterval);
             }

@@ -8,12 +8,18 @@ public enum GameStatus
     Build,
     Wave,
     GameOver,
+    Victory
 }
 
 public class GameManager : Singleton<GameManager>
 {
+    [Header("Commander Data")]
+    public List<CommanderDataSO> commanders;
+
     [Header("Hero Data")]
     public List<HeroDataSO> tier1Heroes;
+
+    public Commander Commander { get; private set; }
 
     public GameStatus Status { get; private set; }
     public event System.Action<GameStatus> OnStatusChanged;
@@ -36,10 +42,34 @@ public class GameManager : Singleton<GameManager>
 
     private void Start()
     {
-        // 영웅을 배치할 수 있는 빌드 모드로 전환
+        Time.timeScale = 1f;
+        SpawnCommander();
         ChangeStatus(GameStatus.Build);
     }
     
+    private void SpawnCommander()
+    {
+        if (commanders == null || !commanders.Any())
+        {
+            Debug.LogError("생성할 수 있는 지휘관이 없습니다.");
+            return;
+        }
+
+        CommanderDataSO commanderData = commanders[0]; // 기본적으로 첫 번째 지휘관 생성
+        GameObject commanderGO = PoolManager.Instance.Get(commanderData.FullPrefabPath);
+        if (commanderGO == null) return;
+
+        Transform endPoint = GridManager.Instance.EndPoint;
+        if (endPoint == null)
+        {
+            Debug.LogError("GridManager에 EndPoint가 설정되지 않았습니다.");
+            return;
+        }
+
+        commanderGO.transform.position = endPoint.position;
+        commanderGO.transform.rotation = Quaternion.identity;
+    }
+
     // 타일이 클릭되었을 때 호출될 이벤트 핸들러
     private void HandleTileClicked(Tile tile)
     {
@@ -66,7 +96,6 @@ public class GameManager : Singleton<GameManager>
 
         HeroDataSO heroData = tier1Heroes[Random.Range(0, tier1Heroes.Count)];
 
-        // heroData.FullHeroPrefabPath가 비어있는지 체크
         if (string.IsNullOrEmpty(heroData.FullHeroPrefabPath))
         {
             Debug.LogError($"Selected hero '{heroData.heroName}' has no valid prefab path in its HeroDataSO!");
@@ -99,5 +128,46 @@ public class GameManager : Singleton<GameManager>
 
         Status = newStatus;
         OnStatusChanged?.Invoke(Status);
+    }
+
+    public void SetCommander(Commander commander)
+    {
+        Commander = commander;
+    }
+
+    public void GameOver()
+    {
+        if (Status == GameStatus.GameOver)
+        {
+            return; // 중복 호출 방지
+        }
+
+        ChangeStatus(GameStatus.GameOver);
+        Time.timeScale = 0f; // 게임 일시정지
+        
+        var resultUI = UIManager.Instance.ShowPopup<GameResultUI>("GameResultUI");
+        if (resultUI != null)
+        {
+            resultUI.SetTitle("GAME OVER");
+        }
+        Debug.Log("Game Over!");
+    }
+
+    public void GameVictory()
+    {
+        if (Status == GameStatus.Victory)
+        {
+            return;
+        }
+
+        ChangeStatus(GameStatus.Victory);
+        Time.timeScale = 0f; // 게임 일시정지
+
+        var resultUI = UIManager.Instance.ShowPopup<GameResultUI>("GameResultUI");
+        if (resultUI != null)
+        {
+            resultUI.SetTitle("VICTORY");
+        }
+        Debug.Log("All waves cleared! Victory!");
     }
 }

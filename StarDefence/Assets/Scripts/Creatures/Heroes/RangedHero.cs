@@ -4,19 +4,21 @@ public class RangedHero : Hero
 {
     protected override void Attack()
     {
-        if (currentTarget == null) return;
-        
-        // HeroDataSO에 지정된 발사체 프리팹 경로 사용
-        if (string.IsNullOrEmpty(heroData.FullProjectilePrefabPath))
+        if (currentTarget == null)
         {
-            Debug.LogError($"{heroData.heroName} has no projectile prefab path assigned in its HeroDataSO.");
+            return;
+        }
+        
+        if (string.IsNullOrEmpty(HeroData.FullProjectilePrefabPath))
+        {
+            Debug.LogError($"{HeroData.heroName} has no projectile prefab path assigned in its HeroDataSO.");
             return;
         }
         
         // TODO: 애니메이션 또는 이펙트 재생
-        Debug.Log($"{heroData.heroName} fires a projectile at {currentTarget.name}.");
+        Debug.Log($"{HeroData.heroName} fires a projectile at {currentTarget.name}.");
         
-        GameObject projectileGO = PoolManager.Instance.Get(heroData.FullProjectilePrefabPath);
+        GameObject projectileGO = PoolManager.Instance.Get(HeroData.FullProjectilePrefabPath);
         if (projectileGO == null) return;
 
         projectileGO.transform.position = transform.position;
@@ -25,7 +27,7 @@ public class RangedHero : Hero
         if (projectile != null)
         {
             // 발사체 초기화
-            projectile.Initialize(currentTarget, heroData.damage);
+            projectile.Initialize(currentTarget, HeroData.attackDamage);
         }
     }
 }

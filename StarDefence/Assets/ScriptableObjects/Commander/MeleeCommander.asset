@@ -9,12 +9,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c0916fe17befb6c4eb78af9aa5cc199a, type: 3}
-  m_Name: Monster
+  m_Script: {fileID: 11500000, guid: 123a82e866528cf4b85932d78649696d, type: 3}
+  m_Name: MeleeCommander
   m_EditorClassIdentifier: 
   maxHealth: 100
-  attackDamage: 1
-  attackRange: 1
+  attackDamage: 10
+  attackRange: 1.5
   attackInterval: 1
-  enemyPrefabName: Monster
-  speed: 2
+  commanderName: MeleeCommander
+  commanderDescription: MeleeCommander
+  commanderPrefabName: MeleeCommander
+  projectilePrefabName: 

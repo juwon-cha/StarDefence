@@ -1,9 +1,9 @@
 using System.Collections;
 using UnityEngine;
 
-public abstract class Hero : MonoBehaviour
+public abstract class Hero : Creature
 {
-    public HeroDataSO heroData { get; private set; }
+    public HeroDataSO HeroData => creatureData as HeroDataSO;
     public Tile placedTile { get; private set; }
 
     protected Enemy currentTarget;
@@ -14,6 +14,17 @@ public abstract class Hero : MonoBehaviour
     private const float SCAN_INTERVAL = 0.2f; // 적 탐색 주기
 
     #region 유니티 생명주기
+    protected override void Start()
+    {
+        base.Start();
+        
+        GameManager.Instance.OnStatusChanged -= OnGameStatusChanged;
+        GameManager.Instance.OnStatusChanged += OnGameStatusChanged;
+
+        // 현재 게임 상태에 따라 초기 동작 결정
+        OnGameStatusChanged(GameManager.Instance.Status);
+    }
+
     private void OnDestroy()
     {
         // GameManager가 먼저 파괴되었을 수 있으므로 null 체크
@@ -31,10 +42,10 @@ public abstract class Hero : MonoBehaviour
             return;
         }
         
-        // 유효한 타겟인지 확인 (죽었거나, 사거리를 벗어났는지)
+        // 유효한 타겟인지 확인(죽었거나 사거리를 벗어났는지)
         if (currentTarget != null && 
             (!currentTarget.gameObject.activeSelf || 
-             Vector3.Distance(transform.position, currentTarget.transform.position) > heroData.attackRange))
+             Vector3.Distance(transform.position, currentTarget.transform.position) > HeroData.attackRange))
         {
             currentTarget = null;
         }
@@ -46,14 +57,14 @@ public abstract class Hero : MonoBehaviour
         if (attackTimer <= 0f && currentTarget != null)
         {
             Attack();
-            attackTimer = heroData.attackInterval; // 타이머 리셋
+            attackTimer = HeroData.attackInterval; // 타이머 리셋
         }
     }
     #endregion
 
     public virtual void Init(HeroDataSO data, Tile tile)
     {
-        heroData = data;
+        creatureData = data;
         placedTile = tile;
         transform.position = tile.transform.position;
 
@@ -61,7 +72,6 @@ public abstract class Hero : MonoBehaviour
         enemyLayerMask = LayerMask.GetMask("Enemy");
         attackTimer = 0;
         
-        // GameManager의 상태 변경 이벤트 구독
         GameManager.Instance.OnStatusChanged -= OnGameStatusChanged;
         GameManager.Instance.OnStatusChanged += OnGameStatusChanged;
 
@@ -118,7 +128,7 @@ public abstract class Hero : MonoBehaviour
     private void FindClosestEnemy()
     {
         // 지정된 공격 사거리 내의 모든 Enemy 레이어 콜라이더를 가져옴
-        Collider2D[] colliders = Physics2D.OverlapCircleAll(transform.position, heroData.attackRange, enemyLayerMask);
+        Collider2D[] colliders = Physics2D.OverlapCircleAll(transform.position, HeroData.attackRange, enemyLayerMask);
 
         float closestDistanceSqr = float.MaxValue;
         Enemy closestEnemy = null;
@@ -144,14 +154,14 @@ public abstract class Hero : MonoBehaviour
     #if UNITY_EDITOR
     private void OnDrawGizmos()
     {
-        if (heroData == null)
+        if (HeroData == null)
         {
             return;
         }
         
         // 공격 사거리를 시각적으로 표시
         Gizmos.color = Color.green;
-        Gizmos.DrawWireSphere(transform.position, heroData.attackRange);
+        Gizmos.DrawWireSphere(transform.position, HeroData.attackRange);
     }
     #endif
 }

@@ -2,109 +2,160 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Enemy : MonoBehaviour
+public class Enemy : Creature
 {
-    public static event Action<Enemy> OnEnemyDestroyed; // 어떤 적이 파괴되었는지 알 수 있도록 Enemy 인스턴스 전달
+    public enum EnemyState { Moving, Attacking }
 
-    // 체력 관련 이벤트
-    /// <summary>현재 체력과 최대 체력 전달</summary>
-    public event Action<float, float> OnHealthChanged;
+    public static event Action<Enemy> OnEnemyDestroyed;
 
-    private float _maxHealth;    // 최대 체력
-    private float _currentHealth; // 현재 체력
-    private float speed;
-    
-    private Transform endPoint;
+    private EnemyDataSO EnemyData => creatureData as EnemyDataSO;
+    private EnemyState currentState;
+    private Transform target;
     private List<Tile> path;
     private int waypointIndex = 0;
+    private float attackTimer;
 
-    // 체력바 UI 관련
-    private readonly string _healthBarUIPrefabPath = Constants.UI_ROOT_PATH + Constants.UI_POPUP_SUB_PATH + Constants.HEALTH_BAR_UI_PREFAB_NAME; // Constants 사용
-    private HealthBarUI _healthBarUIInstance; // 현재 몬스터에게 표시되는 체력바 UI 인스턴스
-
-    public float MaxHealth => _maxHealth;
+    private readonly string _healthBarUIPrefabPath = Constants.UI_ROOT_PATH + Constants.UI_POPUP_SUB_PATH + Constants.HEALTH_BAR_UI_PREFAB_NAME;
+    private HealthBarUI _healthBarUIInstance;
 
     private void OnDisable()
     {
-        // 오브젝트가 풀에 반환될 때 상태 초기화
         path = null;
         waypointIndex = 0;
-        _currentHealth = _maxHealth; // 체력을 최대로 리셋
+        if (creatureData != null)
+        {
+            currentHealth = creatureData.maxHealth;
+        }
 
-        // 체력바 UI가 있으면 풀에 반환하고 참조 해제
         if (_healthBarUIInstance != null)
         {
-            // 어플리케이션 종료 시 PoolManager가 먼저 파괴될 수 있으므로 null 체크
             if (PoolManager.Instance != null)
             {
-                // HealthBarUI가 구독 해제 책임을 가짐
                 PoolManager.Instance.Release(_healthBarUIInstance.gameObject);
             }
             _healthBarUIInstance = null;
         }
     }
 
-    /// <summary>
-    /// 적을 초기화하고 스탯과 목표를 설정한 후 경로 찾음
-    /// </summary>
-    public void Initialize(EnemyDataSO data, Transform target)
+    public void Initialize(EnemyDataSO data, Transform targetTransform)
     {
-        _maxHealth = data.health;
-        _currentHealth = data.health; // 초기 체력 설정
-        speed = data.speed;
-        endPoint = target;
-        
-        // Pathfinding 서비스에 경로 요청
-        path = Pathfinding.Instance.FindPath(transform.position, endPoint.position);
+        creatureData = data;
+        currentHealth = EnemyData.maxHealth;
+        target = targetTransform;
+        currentState = EnemyState.Moving;
+
+        path = Pathfinding.Instance.FindPath(transform.position, target.position);
         if (path == null || path.Count == 0)
         {
-            Debug.LogError($"경로를 찾을 수 없습니다! {name}", this);
+            Debug.LogError($"Path not found for {name}!", this);
             PoolManager.Instance.Release(gameObject);
         }
     }
 
     void Update()
     {
-        if (path == null || waypointIndex >= path.Count)
+        if (GameManager.Instance.Status == GameStatus.GameOver)
         {
             return;
         }
 
+        switch (currentState)
+        {
+            case EnemyState.Moving:
+                Move();
+                break;
+            case EnemyState.Attacking:
+                PerformAttack();
+                break;
+        }
+    }
+
+    private void Move()
+    {
+        if (target == null)
+        {
+            // 지휘관이 파괴되었으므로 이동 중지
+            return;
+        }
+
+        // 어떤 이동을 하기 전에 최종 목표의 공격 범위 내에 있는지 확인
+        if (Vector3.Distance(transform.position, target.position) <= EnemyData.attackRange)
+        {
+            currentState = EnemyState.Attacking;
+            return; // 모든 이동 중지
+        }
+
+        // 경로 따라가기 로직
+        // 경로가 소진되었거나 존재하지 않으면 목표를 향해 직접 이동
+        // 이는 지휘관이 움직일 수 있는 경우도 처리
+        if (path == null || waypointIndex >= path.Count)
+        {
+            transform.position = Vector3.MoveTowards(transform.position, target.position, EnemyData.speed * Time.deltaTime);
+            return;
+        }
+        
+        // 계산된 경로를 따라 이동
         Vector3 currentWaypoint = path[waypointIndex].WorldPosition;
-        transform.position = Vector3.MoveTowards(transform.position, currentWaypoint, speed * Time.deltaTime);
+        transform.position = Vector3.MoveTowards(transform.position, currentWaypoint, EnemyData.speed * Time.deltaTime);
 
         if (Vector3.Distance(transform.position, currentWaypoint) < 0.01f)
         {
             waypointIndex++;
         }
+    }
 
-        if (waypointIndex >= path.Count)
+    private void PerformAttack()
+    {
+        if (target == null)
         {
-            transform.position = Vector3.MoveTowards(transform.position, endPoint.position, speed * Time.deltaTime);
-            if (Vector3.Distance(transform.position, endPoint.position) < 0.01f)
-            {
-                // TODO: 지휘관 체력 감소 로직 추가
-                OnEnemyDestroyed?.Invoke(this); // 파괴된 적 인스턴스 전달
-                PoolManager.Instance.Release(gameObject);
-            }
+            // 지휘관이 파괴되었으므로 공격 중지
+            Debug.Log($"[Enemy: {name}] Target is null. Switching back to Moving state.");
+            currentState = EnemyState.Moving; 
+            return;
+        }
+
+        attackTimer -= Time.deltaTime;
+        if (attackTimer <= 0f)
+        {
+            attackTimer = EnemyData.attackInterval;
+            Attack();
         }
     }
 
-    public void TakeDamage(float damage)
+    private void Attack()
     {
-        // 체력바 UI가 아직 표시되지 않았다면 첫 피격 시 체력바를 표시
+        if (target == null) 
+        {
+            Debug.Log($"[Enemy: {name}] Attack called but target is null.");
+            return;
+        }
+
+        Commander commander = target.GetComponent<Commander>();
+        if (commander != null)
+        {
+            Debug.Log($"[Enemy: {name}] Attacking Commander for {EnemyData.attackDamage} damage.");
+            commander.TakeDamage(EnemyData.attackDamage);
+        }
+        else
+        {
+            Debug.LogWarning($"[Enemy: {name}] Attack target does not have a Commander component.");
+        }
+    }
+
+    public override void TakeDamage(float damage)
+    {
         if (_healthBarUIInstance == null)
         {
             GameObject healthBarGO = PoolManager.Instance.Get(_healthBarUIPrefabPath);
             if (healthBarGO == null) return;
 
             healthBarGO.transform.SetParent(UIManager.Instance.WorldSpaceCanvas.transform);
-            healthBarGO.transform.localScale = Vector3.one; // 월드 스케일 캔버스에 맞춰 기본 스케일 설정
+            healthBarGO.transform.localScale = Vector3.one;
             
             _healthBarUIInstance = healthBarGO.GetComponent<HealthBarUI>();
             if (_healthBarUIInstance != null)
             {
-                _healthBarUIInstance.Initialize(this); // 자신(Enemy)을 체력바 UI에 전달(HealthBarUI가 이벤트 구독)
+                _healthBarUIInstance.Initialize(this);
             }
             else
             {
@@ -114,14 +165,12 @@ public class Enemy : MonoBehaviour
             }
         }
 
-        _currentHealth -= damage;
-        OnHealthChanged?.Invoke(_currentHealth, _maxHealth); // 체력 변화 이벤트 발생
+        base.TakeDamage(damage);
+    }
 
-        if (_currentHealth <= 0)
-        {
-            // TODO: 적 사망 시 보상(골드 등) 지급 로직 추가
-            OnEnemyDestroyed?.Invoke(this); // 파괴된 적 인스턴스 전달
-            PoolManager.Instance.Release(gameObject);
-        }
+    protected override void Die()
+    {
+        OnEnemyDestroyed?.Invoke(this);
+        PoolManager.Instance.Release(gameObject);
     }
 }

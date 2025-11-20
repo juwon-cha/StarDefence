@@ -3,7 +3,7 @@ using UnityEngine;
 public class Projectile : MonoBehaviour
 {
     private Enemy target;
-    private int damage;
+    private float damage;
     private float speed = 15f; // 발사체 속도
 
     private void OnDisable()
@@ -17,7 +17,7 @@ public class Projectile : MonoBehaviour
     /// </summary>
     /// <param name="target">공격할 대상</param>
     /// <param name="damage">입힐 데미지</param>
-    public void Initialize(Enemy target, int damage)
+    public void Initialize(Enemy target, float damage)
     {
         this.target = target;
         this.damage = damage;

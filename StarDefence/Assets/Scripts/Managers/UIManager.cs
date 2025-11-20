@@ -194,6 +194,46 @@ public class UIManager : Singleton<UIManager>
         // 스택에서 제거
         RebuildStackAndExclude(popupToClose);
     }
+    /// <summary>
+    /// 모든 팝업 및 씬 UI를 강제로 파괴하고 캐시를 초기화합니다.
+    /// </summary>
+    public void ClearAllUI()
+    {
+        // 스택에 있는 활성 팝업 파괴
+        while (popupStack.Count > 0)
+        {
+            UI_Popup popup = popupStack.Pop();
+            if (popup != null)
+            {
+                Destroy(popup.gameObject);
+            }
+        }
+        popupStack.Clear();
+
+        // 캐시에 있는 모든 팝업 인스턴스 파괴
+        foreach (var pair in popupCache)
+        {
+            if (pair.Value != null)
+            {
+                Destroy(pair.Value.gameObject);
+            }
+        }
+        popupCache.Clear();
+
+        // 씬 UI 파괴
+        foreach (var pair in sceneCache)
+        {
+            if (pair.Value != null)
+            {
+                Destroy(pair.Value.gameObject);
+            }
+        }
+        sceneCache.Clear();
+        MainHUD = null; // 참조도 초기화
+
+        // 프리팹 캐시는 파괴할 필요 없음 (리소스이므로)
+    }
+
     #endregion
 
     #region 헬퍼 메서드
