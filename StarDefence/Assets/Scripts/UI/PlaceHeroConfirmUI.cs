@@ -42,25 +42,51 @@ public class PlaceHeroConfirmUI : UI_Popup
     /// <summary>
     /// 영웅 승급 확인 UI 설정
     /// </summary>
-    public void SetDataForUpgrade(Hero heroToUpgrade, Hero mergePartner)
-    {
-        confirmButton.onClick.RemoveAllListeners();
-        confirmButton.onClick.AddListener(() =>
+        public void SetDataForUpgrade(Hero heroToUpgrade, Hero mergePartner)
         {
-            GameManager.Instance.ConfirmUpgradeHero(heroToUpgrade, mergePartner);
-            UIManager.Instance.ClosePopup(this);
-        });
-
-        costText.text = heroToUpgrade.HeroData.upgradeCost.ToString();
-        if (confirmButtonText != null)
-        {
-            confirmButtonText.text = "Upgrade";
+            confirmButton.onClick.RemoveAllListeners();
+            confirmButton.onClick.AddListener(() =>
+            {
+                GameManager.Instance.ConfirmUpgradeHero(heroToUpgrade, mergePartner);
+                UIManager.Instance.ClosePopup(this);
+            });
+    
+            costText.text = heroToUpgrade.HeroData.upgradeCost.ToString();
+            if (confirmButtonText != null)
+            {
+                confirmButtonText.text = "Upgrade";
+            }
+            if (resourceIcon != null)
+            {
+                resourceIcon.sprite = ResourceManager.Instance.SpriteDB.mineralIcon; // 미네랄 아이콘으로 설정
+            }
+            
+            transform.position = heroToUpgrade.transform.position + new Vector3(0, 1, 0);
         }
-        if (resourceIcon != null)
+    
+        /// <summary>
+        /// 타일 수리 확인 UI 설정
+        /// </summary>
+        public void SetDataForRepair(Tile tile, int cost)
         {
-            resourceIcon.sprite = ResourceManager.Instance.SpriteDB.mineralIcon; // 미네랄 아이콘으로 설정
+            confirmButton.onClick.RemoveAllListeners();
+            confirmButton.onClick.AddListener(() =>
+            {
+                GameManager.Instance.ConfirmRepairTile(tile);
+                UIManager.Instance.ClosePopup(this);
+            });
+    
+            costText.text = cost.ToString();
+            if (confirmButtonText != null)
+            {
+                confirmButtonText.text = "Repair";
+            }
+            if (resourceIcon != null)
+            {
+                resourceIcon.sprite = ResourceManager.Instance.SpriteDB.mineralIcon; // 미네랄 아이콘으로 설정
+            }
+            
+            transform.position = tile.transform.position + new Vector3(0, 1, 0);
         }
-        
-        transform.position = heroToUpgrade.transform.position + new Vector3(0, 1, 0);
     }
-}
+    

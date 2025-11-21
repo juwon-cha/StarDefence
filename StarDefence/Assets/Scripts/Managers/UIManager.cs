@@ -21,7 +21,7 @@ public class UIManager : Singleton<UIManager>
     private readonly Dictionary<string, UI_Base> prefabCache = new Dictionary<string, UI_Base>();
     // 활성화된 씬 UI를 캐싱
     private readonly Dictionary<string, UI_Scene> sceneCache = new Dictionary<string, UI_Scene>();
-
+    
     public HUD MainHUD { get; private set; }
 
     #region 초기화
@@ -190,12 +190,11 @@ public class UIManager : Singleton<UIManager>
         if (popupToClose == null || !popupToClose.gameObject.activeSelf) return;
 
         popupToClose.gameObject.SetActive(false);
-
-        // 스택에서 제거
         RebuildStackAndExclude(popupToClose);
     }
+
     /// <summary>
-    /// 모든 팝업 및 씬 UI를 강제로 파괴하고 캐시를 초기화합니다.
+    /// 모든 팝업 및 씬 UI를 강제로 파괴하고 캐시 초기화
     /// </summary>
     public void ClearAllUI()
     {
@@ -230,10 +229,8 @@ public class UIManager : Singleton<UIManager>
         }
         sceneCache.Clear();
         MainHUD = null; // 참조도 초기화
-
-        // 프리팹 캐시는 파괴할 필요 없음 (리소스이므로)
     }
-
+    
     #endregion
 
     #region 헬퍼 메서드

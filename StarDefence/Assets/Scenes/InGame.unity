@@ -367,6 +367,8 @@ MonoBehaviour:
   tier1Heroes:
   - {fileID: 11400000, guid: cd9b55967610193428e491de01bca015, type: 2}
   - {fileID: 11400000, guid: d5e5f720112729445a2929ee4b8bfb82, type: 2}
+  baseRepairCost: 20
+  repairCostIncrease: 10
 --- !u!4 &1127255552
 Transform:
   m_ObjectHideFlags: 0

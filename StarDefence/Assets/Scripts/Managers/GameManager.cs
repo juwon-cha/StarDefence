@@ -104,6 +104,15 @@ public class GameManager : Singleton<GameManager>
                 confirmUI.SetDataForPlacement(tile, cost);
             }
         }
+        else if (tile.IsFixable)
+        {
+            int cost = CalculateCurrentRepairCost();
+            var confirmUI = UIManager.Instance.ShowWorldSpacePopup<PlaceHeroConfirmUI>(Constants.PLACE_HERO_CONFIRM_UI_NAME);
+            if (confirmUI != null)
+            {
+                confirmUI.SetDataForRepair(tile, cost);
+            }
+        }
     }
 
     #region 재화 관리
@@ -175,6 +184,33 @@ public class GameManager : Singleton<GameManager>
     }
     #endregion
 
+    #region 타일 수리
+    [Header("Tile Repair Costs")]
+    [SerializeField] private int baseRepairCost = 20;
+    [SerializeField] private int repairCostIncrease = 10;
+    private int repairCount = 0;
+
+    private int CalculateCurrentRepairCost()
+    {
+        return baseRepairCost + (repairCount * repairCostIncrease);
+    }
+
+    public void ConfirmRepairTile(Tile tile)
+    {
+        int cost = CalculateCurrentRepairCost();
+        if (SpendMinerals(cost))
+        {
+            tile.Repair();
+            repairCount++;
+            Debug.Log("타일 수리 완료!");
+        }
+        else
+        {
+            Debug.Log("타일 수리 실패: 미네랄이 부족합니다.");
+        }
+    }
+    #endregion
+
     #region 영웅 배치 및 업그레이드
 
     public void ConfirmPlaceHero(Tile tile)
@@ -222,12 +258,6 @@ public class GameManager : Singleton<GameManager>
         if (heroToUpgrade.HeroData.nextTierHero == null)
         {
             Debug.Log("이 영웅은 최고 등급입니다.");
-            return;
-        }
-
-        if (Minerals < heroToUpgrade.HeroData.upgradeCost)
-        {
-            Debug.Log("업그레이드에 필요한 미네랄이 부족합니다.");
             return;
         }
 

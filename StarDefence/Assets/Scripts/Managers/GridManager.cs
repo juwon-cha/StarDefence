@@ -22,6 +22,7 @@ public class GridManager : Singleton<GridManager>
     
     private BoxCollider2D bgCollider;
     private Dictionary<string, GameObject> tilePrefabDict;
+    private Dictionary<string, Sprite> tileSpriteCache;
     private Tile[,] tileGrid; // 길찾기를 위한 타일 그리드
 
     protected override void Awake()
@@ -51,6 +52,8 @@ public class GridManager : Singleton<GridManager>
                 tilePrefabDict.Add(mapping.tileKey, mapping.tilePrefab);
             }
         }
+        
+        tileSpriteCache = new Dictionary<string, Sprite>();
 
         GenerateMapFromFile();
     }
@@ -135,5 +138,32 @@ public class GridManager : Singleton<GridManager>
 
         // 생성된 그리드와 경계 정보를 Pathfinding에 전달
         Pathfinding.Instance.SetGrid(tileGrid, bgCollider.bounds);
+    }
+
+    /// <summary>
+    /// 타일 키에 해당하는 스프라이트 반환. 성능을 위해 캐싱
+    /// </summary>
+    public Sprite GetSpriteForTileKey(string key)
+    {
+        // 캐시에 이미 스프라이트가 있는지 확인
+        if (tileSpriteCache.TryGetValue(key, out Sprite sprite))
+        {
+            return sprite;
+        }
+
+        // 캐시에 없으면 프리팹 딕셔너리에서 프리팹을 찾음
+        if (tilePrefabDict.TryGetValue(key, out GameObject prefab))
+        {
+            SpriteRenderer sr = prefab.GetComponent<SpriteRenderer>();
+            if (sr != null)
+            {
+                // 스프라이트를 찾아서 캐시에 추가하고 반환
+                tileSpriteCache.Add(key, sr.sprite);
+                return sr.sprite;
+            }
+        }
+
+        Debug.LogWarning($"[GridManager] '{key}' 키에 해당하는 타일 프리팹이나 SpriteRenderer를 찾을 수 없습니다.");
+        return null;
     }
 }
