@@ -1,6 +1,6 @@
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "NewProbeData", menuName = "StarDefence/Probe Data")]
+[CreateAssetMenu(fileName = "NewProbeData", menuName = "ScriptableObjects//Probe Data")]
 public class ProbeDataSO : ScriptableObject
 {
     [Header("Probe Info")]

@@ -1,10 +1,16 @@
 using System.Collections;
+using System.Collections.Generic;
+// using System.Linq; // LINQ 사용 제거
 using UnityEngine;
 
 public abstract class Hero : Creature
 {
     public HeroDataSO HeroData => creatureData as HeroDataSO;
     public Tile placedTile { get; private set; }
+
+    // 버프 시스템
+    public float CurrentAttackInterval { get; private set; }
+    private readonly List<BuffDataSO> activeBuffs = new List<BuffDataSO>();
 
     protected Enemy currentTarget;
     private float attackTimer;
@@ -50,7 +56,7 @@ public abstract class Hero : Creature
         if (attackTimer <= 0f && currentTarget != null)
         {
             Attack();
-            attackTimer = HeroData.attackInterval; // 타이머 리셋
+            attackTimer = CurrentAttackInterval; // 버프가 적용된 공격 속도로 타이머 리셋
         }
     }
     #endregion
@@ -61,24 +67,20 @@ public abstract class Hero : Creature
         placedTile = tile;
         transform.position = tile.transform.position;
 
-        // "Enemy" 레이어만 탐지하도록 레이어 마스크 설정
         enemyLayerMask = LayerMask.GetMask("Enemy");
         attackTimer = 0;
         
-        // 이벤트를 다시 구독하기 전에 이전 구독을 해제하여 중복 방지
+        RecalculateStats(); // 능력치 초기 계산
+        
         if(GameManager.Instance != null)
         {
             GameManager.Instance.OnStatusChanged -= OnGameStatusChanged;
         }
         GameManager.Instance.OnStatusChanged += OnGameStatusChanged;
-
-        // 현재 게임 상태에 따라 초기 동작 결정
+        
         OnGameStatusChanged(GameManager.Instance.Status);
     }
     
-    /// <summary>
-    /// 영웅이 풀에 반환되거나 제거될 때 호출될 정리 메서드
-    /// </summary>
     public void Cleanup()
     {
         if (GameManager.Instance != null)
@@ -92,22 +94,63 @@ public abstract class Hero : Creature
             scanCoroutine = null;
         }
         
+        activeBuffs.Clear();
+        RecalculateStats();
         currentTarget = null;
     }
     
-    /// <summary>
-    /// 실제 공격 로직. 자식 클래스에서 반드시 구현
-    /// </summary>
     protected abstract void Attack();
     
+    #region 버프 시스템
+    
     /// <summary>
-    /// 게임 상태 변경 시 호출될 이벤트 핸들러
+    /// 영웅 버프 적용
     /// </summary>
+    public void ApplyBuff(BuffDataSO buff)
+    {
+        if (buff == null || activeBuffs.Contains(buff)) return;
+        
+        activeBuffs.Add(buff);
+        RecalculateStats();
+    }
+
+    /// <summary>
+    /// 영웅 버프 제거
+    /// </summary>
+    public void RemoveBuff(BuffDataSO buff)
+    {
+        if (buff == null || !activeBuffs.Contains(buff)) return;
+
+        activeBuffs.Remove(buff);
+        RecalculateStats();
+    }
+
+    /// <summary>
+    /// 현재 적용된 버프 목록을 기반으로 최종 능력치 다시 계산
+    /// </summary>
+    private void RecalculateStats()
+    {
+        // 공격 속도 계산
+        float attackSpeedBonus = 0f;
+        foreach (BuffDataSO buff in activeBuffs)
+        {
+            if (buff.buffType == BuffType.AttackSpeed)
+            {
+                attackSpeedBonus += buff.value;
+            }
+        }
+        
+        CurrentAttackInterval = HeroData.attackInterval * (1 - attackSpeedBonus);
+        
+        // TODO: 다른 버프들(공격력, 사거리 등) 계산 로직 추가
+    }
+    
+    #endregion
+    
     private void OnGameStatusChanged(GameStatus newStatus)
     {
         if (newStatus == GameStatus.Wave)
         {
-            // Wave가 시작되면 적 탐색 코루틴 시작
             if (scanCoroutine == null)
             {
                 scanCoroutine = StartCoroutine(ScanForEnemiesCoroutine());
@@ -115,7 +158,6 @@ public abstract class Hero : Creature
         }
         else
         {
-            // Wave가 아니면 적 탐색 코루틴 중지 및 타겟 초기화
             if (scanCoroutine != null)
             {
                 StopCoroutine(scanCoroutine);
@@ -125,14 +167,10 @@ public abstract class Hero : Creature
         }
     }
 
-    /// <summary>
-    /// 주기적으로 주변의 적을 탐색하여 가장 가까운 적을 타겟으로 설정
-    /// </summary>
     private IEnumerator ScanForEnemiesCoroutine()
     {
         while (true)
         {
-            // 현재 타겟이 없으면 새로운 타겟 탐색
             if (currentTarget == null)
             {
                 FindClosestEnemy();
@@ -143,7 +181,6 @@ public abstract class Hero : Creature
 
     private void FindClosestEnemy()
     {
-        // 지정된 공격 사거리 내의 모든 Enemy 레이어 콜라이더를 가져옴
         Collider2D[] colliders = Physics2D.OverlapCircleAll(transform.position, HeroData.attackRange, enemyLayerMask);
 
         float closestDistanceSqr = float.MaxValue;
@@ -151,11 +188,9 @@ public abstract class Hero : Creature
 
         foreach (var col in colliders)
         {
-            // 콜라이더에서 Enemy 컴포넌트 가져오기
             Enemy enemy = col.GetComponent<Enemy>();
             if (enemy == null) continue;
-
-            // 영웅과 적 사이의 거리 제곱 계산(Vector3.Distance보다 빠름)
+            
             float distanceSqr = (transform.position - enemy.transform.position).sqrMagnitude;
 
             if (distanceSqr < closestDistanceSqr)
@@ -175,7 +210,6 @@ public abstract class Hero : Creature
             return;
         }
         
-        // 공격 사거리를 시각적으로 표시
         Gizmos.color = Color.green;
         Gizmos.DrawWireSphere(transform.position, HeroData.attackRange);
     }

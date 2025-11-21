@@ -426,6 +426,9 @@ MonoBehaviour:
     tilePrefab: {fileID: 1127176333440276468, guid: 5bdb238846fdedf41a36ca5d32eaeb28, type: 3}
   - tileKey: F
     tilePrefab: {fileID: 2352426930919167454, guid: 8901db02720dd8747a3f302b462e7cd2, type: 3}
+  numberOfBuffTiles: 2
+  possibleBuffs:
+  - {fileID: 11400000, guid: e595c06417720d446b622a925846a12d, type: 2}
 --- !u!4 &1297137359
 Transform:
   m_ObjectHideFlags: 0

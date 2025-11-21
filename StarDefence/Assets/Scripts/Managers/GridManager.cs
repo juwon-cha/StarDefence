@@ -6,7 +6,8 @@ using System.Linq;
 [System.Serializable]
 public class TileMapping
 {
-    public string tileKey; // "S", "B", "X", "F", "H", "E"
+    // "S(적 스폰)", "B(배치 가능한 타일)", "X(배치 불가 타일)", "F(수리 가능 타일)", "H(지휘관 스폰)"
+    public string tileKey;
     public GameObject tilePrefab; // 연결할 프리팹
 }
 
@@ -14,8 +15,11 @@ public class GridManager : Singleton<GridManager>
 {
     [Header("Map Data")]
     [SerializeField] private string mapFileName;
-
     [SerializeField] private List<TileMapping> tileMappings;
+
+    [Header("Buff Tile Settings")]
+    [SerializeField] private int numberOfBuffTiles = 3; // 생성할 강화 타일의 수
+    [SerializeField] private List<BuffDataSO> possibleBuffs; // 사용 가능한 버프 목록
 
     public Transform SpawnPoint { get; private set; }
     public Transform EndPoint { get; private set; }
@@ -29,7 +33,6 @@ public class GridManager : Singleton<GridManager>
     {
         base.Awake();
 
-        // 태그로 배경 오브젝트를 찾고 BoxCollider2D를 가져옴
         GameObject backgroundGO = GameObject.FindGameObjectWithTag("Background");
         if (backgroundGO == null)
         {
@@ -136,28 +139,65 @@ public class GridManager : Singleton<GridManager>
         if (SpawnPoint == null) Debug.LogError("[GridManager] 맵에 스폰 지점(S)이 없습니다!");
         if (EndPoint == null) Debug.LogError("[GridManager] 맵에 목표 지점(E)이 없습니다!");
 
-        // 생성된 그리드와 경계 정보를 Pathfinding에 전달
         Pathfinding.Instance.SetGrid(tileGrid, bgCollider.bounds);
+        
+        GenerateBuffTiles(); // 맵 생성 후 강화 타일 생성
     }
 
     /// <summary>
-    /// 타일 키에 해당하는 스프라이트 반환. 성능을 위해 캐싱
+    /// 무작위로 배치 가능한 타일 중 일부에 버프 적용
     /// </summary>
+    void GenerateBuffTiles()
+    {
+        if (possibleBuffs == null || possibleBuffs.Count == 0)
+        {
+            Debug.LogWarning("[GridManager] 적용할 버프가 없습니다. 'Possible Buffs' 리스트를 확인하세요.");
+            return;
+        }
+
+        // 모든 배치 가능한("B") 타일을 찾음
+        List<Tile> placeableTiles = new List<Tile>();
+        foreach (var tile in tileGrid)
+        {
+            if (tile != null && tile.IsPlaceable)
+            {
+                placeableTiles.Add(tile);
+            }
+        }
+
+        if (placeableTiles.Count < numberOfBuffTiles)
+        {
+            Debug.LogWarning($"[GridManager] 버프를 적용할 타일이 부족합니다. 필요한 타일: {numberOfBuffTiles}, 배치 가능한 타일: {placeableTiles.Count}");
+            numberOfBuffTiles = placeableTiles.Count;
+        }
+
+        // 타일 리스트를 무작위로 섞음
+        var shuffledTiles = placeableTiles.OrderBy(t => Random.value).ToList();
+
+        // 정해진 수만큼의 타일에 버프 적용
+        for (int i = 0; i < numberOfBuffTiles; i++)
+        {
+            Tile tileToBuff = shuffledTiles[i];
+            
+            // 사용 가능한 버프 중 하나를 무작위로 선택
+            BuffDataSO randomBuff = possibleBuffs[Random.Range(0, possibleBuffs.Count)];
+            
+            tileToBuff.SetBuff(randomBuff);
+        }
+    }
+
     public Sprite GetSpriteForTileKey(string key)
     {
-        // 캐시에 이미 스프라이트가 있는지 확인
         if (tileSpriteCache.TryGetValue(key, out Sprite sprite))
         {
             return sprite;
         }
-
-        // 캐시에 없으면 프리팹 딕셔너리에서 프리팹을 찾음
+        
         if (tilePrefabDict.TryGetValue(key, out GameObject prefab))
         {
             SpriteRenderer sr = prefab.GetComponent<SpriteRenderer>();
             if (sr != null)
             {
-                // 스프라이트를 찾아서 캐시에 추가하고 반환
                 tileSpriteCache.Add(key, sr.sprite);
                 return sr.sprite;
             }

@@ -3,7 +3,7 @@ using UnityEngine.EventSystems;
 
 public class Tile : MonoBehaviour, IPointerClickHandler
 {
-    // 타일 클릭 시 호출될 정적 이벤트 정의
+    // 정적 이벤트
     public static event System.Action<Tile> OnTileClicked;
 
     // Grid Info
@@ -12,32 +12,37 @@ public class Tile : MonoBehaviour, IPointerClickHandler
     public int GridX;
     public int GridY;
 
-    // 영웅 배치
+    // 영웅 배치 관련
     public bool IsPlaceable { get; private set; }
     public bool IsFixable { get; private set; }
     public Hero PlacedHero { get; private set; }
+
+    // 버프 관련
+    public BuffDataSO CurrentBuff { get; private set; }
+    private Color originalColor;
 
     private string tileKey;
     private SpriteRenderer spriteRenderer;
 
     // A* Costs
-    public int gCost; // 시작점에서 현재 타일까지의 비용
-    public int hCost; // 현재 타일에서 목적지까지의 예상 비용
-    
-    // fCost = gCost + hCost
+    public int gCost;
+    public int hCost; 
     public int fCost => gCost + hCost;
 
     // Path
-    public Tile parent; // 이 타일로 오기 직전의 부모 타일
+    public Tile parent; 
 
     private void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
+        if (spriteRenderer != null)
+        {
+            originalColor = spriteRenderer.color; // 원래 색상 저장
+        }
     }
 
     public void OnPointerClick(PointerEventData eventData)
     {
-        // 좌클릭 시에만 이벤트 발생
         if (eventData.button == PointerEventData.InputButton.Left)
         {
             OnTileClicked?.Invoke(this);
@@ -52,8 +57,21 @@ public class Tile : MonoBehaviour, IPointerClickHandler
         this.GridX = gridX;
         this.GridY = gridY;
 
-        IsPlaceable = (tileKey == "B"); // "B" 타일만 배치 가능
-        IsFixable = (tileKey == "F");   // "F" 타일은 수리 가능
+        IsPlaceable = (tileKey == "B");
+        IsFixable = (tileKey == "F");
+    }
+
+    /// <summary>
+    /// 타일에 버프를 설정하고 시각적으로 표시
+    /// </summary>
+    public void SetBuff(BuffDataSO buff)
+    {
+        CurrentBuff = buff;
+        if (spriteRenderer != null)
+        {
+            // 버프가 있으면 해당 색상으로, 없으면 원래 색상으로 변경
+            spriteRenderer.color = (buff != null) ? buff.tileColor : originalColor;
+        }
     }
 
     /// <summary>
@@ -65,9 +83,8 @@ public class Tile : MonoBehaviour, IPointerClickHandler
 
         IsFixable = false;
         IsPlaceable = true;
-        tileKey = "B"; // 내부 상태도 변경
+        tileKey = "B";
 
-        // 시각적으로 수리되었음을 표시하기 위해 스프라이트를 'B'타일의 것으로 교체
         if (spriteRenderer != null)
         {
             Sprite placeableSprite = GridManager.Instance.GetSpriteForTileKey("B");
@@ -78,23 +95,36 @@ public class Tile : MonoBehaviour, IPointerClickHandler
         }
     }
     
+    /// <summary>
+    /// 타일에 영웅을 배치하거나 제거하고 버프 적용/제거
+    /// </summary>
     public void SetHero(Hero hero)
     {
+        // 영웅 제거
         if (hero == null)
         {
+            if (PlacedHero != null && CurrentBuff != null)
+            {
+                PlacedHero.RemoveBuff(CurrentBuff);
+            }
             ClearHero();
-            return;
         }
-
-        PlacedHero = hero;
-        IsPlaceable = false;
+        // 영웅 배치
+        else
+        {
+            PlacedHero = hero;
+            IsPlaceable = false;
+            
+            if (CurrentBuff != null)
+            {
+                PlacedHero.ApplyBuff(CurrentBuff);
+            }
+        }
     }
 
     public void ClearHero()
     {
         PlacedHero = null;
-        
-        // 수리된 타일은 영웅이 사라져도 계속 배치 가능 상태를 유지해야 함
         IsPlaceable = (tileKey == "B");
     }
 }
