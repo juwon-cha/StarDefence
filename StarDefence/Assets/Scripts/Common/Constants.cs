@@ -8,6 +8,7 @@ public static class Constants
     public const string COMMANDER_ROOT_PATH = "Prefabs/Creatures/Commander/";
     public const string HERO_ROOT_PATH = "Prefabs/Creatures/Heroes/";
     public const string ENEMY_ROOT_PATH = "Prefabs/Creatures/Enemies/";
+    public const string PROBE_ROOT_PATH = "Prefabs/Creatures/Probes/";
     public const string PROJECTILE_ROOT_PATH = "Prefabs/Projectiles/";
     public const string UI_ROOT_PATH = "Prefabs/UI/";
     public const string UI_POPUP_SUB_PATH = "Popup/";
@@ -18,6 +19,7 @@ public static class Constants
     public const string HUD_UI_NAME = "HUD";
     public const string NEXT_WAVE_BUTTON_UI_NAME = "NextWaveButtonUI";
     public const string PLACE_HERO_CONFIRM_UI_NAME = "PlaceHeroConfirmUI";
+    public const string PROBE_PURCHASE_UI_NAME = "ProbePurchaseUI";
 
     // 기타 상수들
 }

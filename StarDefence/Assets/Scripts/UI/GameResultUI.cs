@@ -1,6 +1,5 @@
 using TMPro;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class GameResultUI : UI_Popup
@@ -26,30 +25,7 @@ public class GameResultUI : UI_Popup
 
     private void OnRestartButtonClicked()
     {
-        Time.timeScale = 1f;
-
-        // UIManager가 관리하는 모든 UI 요소 지우기
-        if (UIManager.Instance != null)
-        {
-            UIManager.Instance.ClearAllUI();
-        }
-
-        // 깨끗한 상태를 위해 영구 관리자 파괴
-        if (PoolManager.Instance != null)
-        {
-            Destroy(PoolManager.Instance.gameObject);
-        }
-        if (UIManager.Instance != null)
-        {
-            Destroy(UIManager.Instance.gameObject);
-        }
-        if (GameManager.Instance != null)
-        {
-            Destroy(GameManager.Instance.gameObject);
-        }
-        
-        // 현재 활성화된 씬 다시 로드
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        GameManager.Instance.RestartGame();
     }
 
     private void OnDestroy()

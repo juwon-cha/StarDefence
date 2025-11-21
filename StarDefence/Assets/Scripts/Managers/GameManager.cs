@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public enum GameStatus
 {
@@ -62,7 +63,7 @@ public class GameManager : Singleton<GameManager>
         OnGoldChanged?.Invoke(Gold);
         OnMineralsChanged?.Invoke(Minerals);
     }
-    
+
     private void SpawnCommander()
     {
         if (commanders == null || !commanders.Any())
@@ -124,7 +125,7 @@ public class GameManager : Singleton<GameManager>
         Debug.Log("골드가 부족합니다.");
         return false;
     }
-    
+
     public void AddMinerals(int amount)
     {
         Minerals += amount;
@@ -152,6 +153,26 @@ public class GameManager : Singleton<GameManager>
             AddGold(enemyData.goldReward);
         }
     }
+
+    public void TryPurchaseProbe()
+    {
+        if (ProbeManager.Instance.CurrentProbeCount >= ProbeManager.Instance.MaxProbeCount)
+        {
+            Debug.Log("프로브 생성 실패: 최대 인구수에 도달했습니다.");
+            return;
+        }
+
+        int cost = ProbeManager.Instance.GetCurrentProbeCost();
+        if (SpendGold(cost))
+        {
+            ProbeManager.Instance.CreateProbe();
+            Debug.Log("프로브 생성 완료!");
+        }
+        else
+        {
+            Debug.Log("프로브 생성 실패: 골드가 부족합니다.");
+        }
+    }
     #endregion
 
     #region 영웅 배치 및 업그레이드
@@ -165,7 +186,7 @@ public class GameManager : Singleton<GameManager>
         }
 
         HeroDataSO heroData = tier1Heroes[Random.Range(0, tier1Heroes.Count)];
-        
+
         if (!SpendGold(heroData.placementCost))
         {
             Debug.Log("배치 실패: 골드가 부족합니다.");
@@ -183,13 +204,13 @@ public class GameManager : Singleton<GameManager>
         {
             return;
         }
-        
+
         heroGO.transform.position = tile.transform.position;
         heroGO.transform.rotation = Quaternion.identity;
 
         Hero hero = heroGO.GetComponent<Hero>();
         hero.Init(heroData, tile);
-        
+
         tile.SetHero(hero);
         placedHeroes.Add(hero);
 
@@ -210,7 +231,7 @@ public class GameManager : Singleton<GameManager>
             return;
         }
 
-        Hero mergePartner = placedHeroes.FirstOrDefault(h => 
+        Hero mergePartner = placedHeroes.FirstOrDefault(h =>
             h != heroToUpgrade && h.HeroData == heroToUpgrade.HeroData);
 
         if (mergePartner == null)
@@ -239,7 +260,7 @@ public class GameManager : Singleton<GameManager>
 
         RemoveHero(heroToUpgrade);
         RemoveHero(mergePartner);
-        
+
         GameObject newHeroGO = PoolManager.Instance.Get(nextTierHeroData.FullHeroPrefabPath);
         if (newHeroGO == null)
         {
@@ -248,23 +269,23 @@ public class GameManager : Singleton<GameManager>
 
         newHeroGO.transform.position = targetTile.transform.position;
         newHeroGO.transform.rotation = Quaternion.identity;
-        
+
         Hero newHero = newHeroGO.GetComponent<Hero>();
         newHero.Init(nextTierHeroData, targetTile);
-        
+
         targetTile.SetHero(newHero);
         placedHeroes.Add(newHero);
 
         Debug.Log($"업그레이드 성공! {nextTierHeroData.heroName} 생성됨. 총 배치된 영웅 수: {placedHeroes.Count}");
     }
-    
+
     private void RemoveHero(Hero hero)
     {
         if (hero == null)
         {
             return;
         }
-        
+
         hero.placedTile.ClearHero();
         placedHeroes.Remove(hero);
         hero.Cleanup();
@@ -298,7 +319,7 @@ public class GameManager : Singleton<GameManager>
 
         ChangeStatus(GameStatus.GameOver);
         Time.timeScale = 0f;
-        
+
         var resultUI = UIManager.Instance.ShowPopup<GameResultUI>("GameResultUI");
         if (resultUI != null)
         {
@@ -325,5 +346,27 @@ public class GameManager : Singleton<GameManager>
         }
 
         Debug.Log("모든 웨이브 클리어! 승리!");
+    }
+
+    public void RestartGame()
+    {
+        // 게임 시간 원래대로
+        Time.timeScale = 1f;
+
+        // UI를 먼저 모두 정리
+        if (UIManager.Instance != null)
+        {
+            UIManager.Instance.ClearAllUI();
+        }
+
+        // 모든 영속성 싱글톤 인스턴스 정리
+        // 순서는 크게 중요하지 않지만 참조가 덜한 것부터 정리하는 것이 일반적
+        ProbeManager.Cleanup();
+        PoolManager.Cleanup();
+        UIManager.Cleanup();
+        GameManager.Cleanup(); // 자기 자신도 정리
+
+        // 현재 씬을 다시 로드
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 }

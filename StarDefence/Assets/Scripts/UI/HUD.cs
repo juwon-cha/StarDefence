@@ -7,6 +7,18 @@ public class HUD : UI_Scene
     [SerializeField] private TextMeshProUGUI waveText;
     [SerializeField] private TextMeshProUGUI goldText;
     [SerializeField] private TextMeshProUGUI mineralsText;
+    [SerializeField] private TextMeshProUGUI probeCountText; // 프로브 숫자 표시용
+    [SerializeField] private Button probePurchaseButton;
+    [SerializeField] private Button commandCenterButton;
+    
+    [Header("Probe Target UI References")]
+    [SerializeField] private RectTransform commandCenterRect;
+    [SerializeField] private RectTransform leftMineralPatchRect;
+    [SerializeField] private RectTransform rightMineralPatchRect;
+
+    public RectTransform CommandCenterRect => commandCenterRect;
+    public RectTransform LeftMineralPatchRect => leftMineralPatchRect;
+    public RectTransform RightMineralPatchRect => rightMineralPatchRect;
 
     void Start()
     {
@@ -20,6 +32,23 @@ public class HUD : UI_Scene
             UpdateGoldText(GameManager.Instance.Gold);
             UpdateMineralsText(GameManager.Instance.Minerals);
         }
+
+        // 프로브 숫자 변경 이벤트 구독
+        if (ProbeManager.Instance != null)
+        {
+            ProbeManager.Instance.OnProbeCountChanged += UpdateProbeCountText;
+            // 초기값 설정
+            UpdateProbeCountText(ProbeManager.Instance.CurrentProbeCount, ProbeManager.Instance.MaxProbeCount);
+        }
+
+        if (probePurchaseButton != null)
+        {
+            probePurchaseButton.onClick.AddListener(OnProbePurchaseButtonClicked);
+        }
+        if (commandCenterButton != null)
+        {
+            commandCenterButton.onClick.AddListener(OnProbePurchaseButtonClicked);
+        }
     }
 
     private void OnDestroy()
@@ -28,6 +57,49 @@ public class HUD : UI_Scene
         {
             GameManager.Instance.OnGoldChanged -= UpdateGoldText;
             GameManager.Instance.OnMineralsChanged -= UpdateMineralsText;
+        }
+
+        if (ProbeManager.Instance != null)
+        {
+            ProbeManager.Instance.OnProbeCountChanged -= UpdateProbeCountText;
+        }
+        
+        if (probePurchaseButton != null)
+        {
+            probePurchaseButton.onClick.RemoveListener(OnProbePurchaseButtonClicked);
+        }
+        if (commandCenterButton != null)
+        {
+            commandCenterButton.onClick.RemoveListener(OnProbePurchaseButtonClicked);
+        }
+    }
+
+    private void UpdateProbeCountText(int current, int max)
+    {
+        if (probeCountText != null)
+        {
+            probeCountText.text = $"{current}/{max}";
+        }
+
+        // 프로브 수가 최대치에 도달하면 버튼 비활성화
+        bool canPurchase = current < max;
+        if (probePurchaseButton != null)
+        {
+            probePurchaseButton.interactable = canPurchase;
+        }
+        if (commandCenterButton != null)
+        {
+            // 커맨드 센터는 버튼 기능만 비활성화하고 시각적으로는 활성화 상태를 유지할 수 있음
+            commandCenterButton.interactable = canPurchase;
+        }
+    }
+
+    private void OnProbePurchaseButtonClicked()
+    {
+        var popup = UIManager.Instance.ShowPopup<ProbePurchaseUI>(Constants.PROBE_PURCHASE_UI_NAME);
+        if (popup != null)
+        {
+            popup.SetData();
         }
     }
 

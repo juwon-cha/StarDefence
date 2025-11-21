@@ -95,4 +95,17 @@ public abstract class Singleton<T> : MonoBehaviour where T : Singleton<T>
 
         return result;
     }
+
+    /// <summary>
+    /// 재시작 등을 위해 싱글톤 인스턴스를 수동으로 정리
+    /// </summary>
+    public static void Cleanup()
+    {
+        if (instance != null)
+        {
+            Destroy(instance.gameObject);
+            instance = null;
+        }
+        isShuttingDown = false;
+    }
 }

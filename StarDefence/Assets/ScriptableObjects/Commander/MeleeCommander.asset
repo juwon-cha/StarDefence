@@ -15,7 +15,7 @@ MonoBehaviour:
   maxHealth: 100
   attackDamage: 10
   attackRange: 1.5
-  attackInterval: 1
+  attackInterval: 0.5
   commanderName: MeleeCommander
   commanderDescription: MeleeCommander
   commanderPrefabName: MeleeCommander
