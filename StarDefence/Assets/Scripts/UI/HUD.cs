@@ -43,20 +43,25 @@ public class HUD : UI_Scene
             UpdateProbeCountText(ProbeManager.Instance.CurrentProbeCount, ProbeManager.Instance.MaxProbeCount);
         }
 
+        // 리스너 초기화 후 코드에서 명시적으로 등록 (에디터 설정 오류 방지)
         if (probePurchaseButton != null)
         {
+            probePurchaseButton.onClick.RemoveAllListeners();
             probePurchaseButton.onClick.AddListener(OnProbePurchaseButtonClicked);
         }
         if (commandCenterButton != null)
         {
+            commandCenterButton.onClick.RemoveAllListeners();
             commandCenterButton.onClick.AddListener(OnProbePurchaseButtonClicked);
         }
         if (bountyButton != null)
         {
+            bountyButton.onClick.RemoveAllListeners();
             bountyButton.onClick.AddListener(OnBountyButtonClicked);
         }
         if (upgradeButton != null)
         {
+            upgradeButton.onClick.RemoveAllListeners();
             upgradeButton.onClick.AddListener(OnUpgradeButtonClicked);
         }
     }
@@ -74,21 +79,22 @@ public class HUD : UI_Scene
             ProbeManager.Instance.OnProbeCountChanged -= UpdateProbeCountText;
         }
         
+        // 버튼 리스너 해제
         if (probePurchaseButton != null)
         {
-            probePurchaseButton.onClick.RemoveListener(OnProbePurchaseButtonClicked);
+            probePurchaseButton.onClick.RemoveAllListeners();
         }
         if (commandCenterButton != null)
         {
-            commandCenterButton.onClick.RemoveListener(OnProbePurchaseButtonClicked);
+            commandCenterButton.onClick.RemoveAllListeners();
         }
         if (bountyButton != null)
         {
-            bountyButton.onClick.RemoveListener(OnBountyButtonClicked);
+            bountyButton.onClick.RemoveAllListeners();
         }
         if (upgradeButton != null)
         {
-            upgradeButton.onClick.RemoveListener(OnUpgradeButtonClicked);
+            upgradeButton.onClick.RemoveAllListeners();
         }
     }
 
