@@ -35,12 +35,6 @@ public abstract class Hero : Creature
 
     protected virtual void Update()
     {
-        // Wave 상태가 아니면 공격 로직을 실행하지 않음
-        if (GameManager.Instance == null || GameManager.Instance.Status != GameStatus.Wave)
-        {
-            return;
-        }
-        
         // 유효한 타겟인지 확인(죽었거나 사거리를 벗어났는지)
         if (currentTarget != null && 
             (!currentTarget.gameObject.activeSelf || 
@@ -149,21 +143,20 @@ public abstract class Hero : Creature
     
     private void OnGameStatusChanged(GameStatus newStatus)
     {
-        if (newStatus == GameStatus.Wave)
+        // 적 탐색 코루틴이 항상 실행되도록 보장
+        if (scanCoroutine == null)
         {
-            if (scanCoroutine == null)
-            {
-                scanCoroutine = StartCoroutine(ScanForEnemiesCoroutine());
-            }
+            scanCoroutine = StartCoroutine(ScanForEnemiesCoroutine());
         }
-        else
+        
+        // 웨이브 상태가 아닐 때 현재 타겟이 일반 몬스터라면 타겟 초기화
+        // 현상금 몬스터는 계속 공격해야 하므로 타겟 유지
+        if (newStatus != GameStatus.Wave)
         {
-            if (scanCoroutine != null)
+            if (currentTarget != null && !currentTarget.IsBountyTarget)
             {
-                StopCoroutine(scanCoroutine);
-                scanCoroutine = null;
+                currentTarget = null;
             }
-            currentTarget = null;
         }
     }
 
@@ -185,11 +178,21 @@ public abstract class Hero : Creature
 
         float closestDistanceSqr = float.MaxValue;
         Enemy closestEnemy = null;
+        bool isWaveActive = GameManager.Instance.Status == GameStatus.Wave;
 
         foreach (var col in colliders)
         {
             Enemy enemy = col.GetComponent<Enemy>();
-            if (enemy == null) continue;
+            if (enemy == null || !enemy.gameObject.activeSelf)
+            {
+                continue;
+            }
+
+            // 웨이브가 진행 중이 아닐 때 현상금 몬스터가 아니면 건너뜀
+            if (!isWaveActive && !enemy.IsBountyTarget)
+            {
+                continue;
+            }
             
             float distanceSqr = (transform.position - enemy.transform.position).sqrMagnitude;
 

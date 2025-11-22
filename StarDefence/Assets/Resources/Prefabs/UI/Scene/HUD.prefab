@@ -1238,6 +1238,8 @@ MonoBehaviour:
   probeCountText: {fileID: 977938914982511607}
   probePurchaseButton: {fileID: 8166028767655657393}
   commandCenterButton: {fileID: 5554778639518801293}
+  bountyButton: {fileID: 6442757967987380510}
+  bountyPopupUI: {fileID: 0}
   commandCenterRect: {fileID: 807781501437615377}
   leftMineralPatchRect: {fileID: 3140635035959966302}
   rightMineralPatchRect: {fileID: 4756871451011281950}

@@ -11,12 +11,15 @@ public class Enemy : Creature
     private EnemyDataSO EnemyData => creatureData as EnemyDataSO;
     private EnemyState currentState;
     private Transform target;
+    private Commander targetCommander;
     private List<Tile> path;
     private int waypointIndex = 0;
     private float attackTimer;
 
     private readonly string _healthBarUIPrefabPath = Constants.UI_ROOT_PATH + Constants.UI_POPUP_SUB_PATH + Constants.HEALTH_BAR_UI_PREFAB_NAME;
     private HealthBarUI _healthBarUIInstance;
+
+    public bool IsBountyTarget { get; set; }
 
     private void OnDisable()
     {
@@ -35,6 +38,9 @@ public class Enemy : Creature
             }
             _healthBarUIInstance = null;
         }
+
+        targetCommander = null; // 풀에 반환될 때 캐시된 컴포넌트 초기화
+        IsBountyTarget = false; // 풀에 반환될 때 플래그 초기화
     }
 
     public void Initialize(EnemyDataSO data, Transform targetTransform)
@@ -43,6 +49,12 @@ public class Enemy : Creature
         currentHealth = EnemyData.maxHealth;
         target = targetTransform;
         currentState = EnemyState.Moving;
+
+        // 타겟의 Commander 컴포넌트 캐싱
+        if (target != null)
+        {
+            targetCommander = target.GetComponent<Commander>();
+        }
 
         path = Pathfinding.Instance.FindPath(transform.position, target.position);
         if (path == null || path.Count == 0)
@@ -124,21 +136,19 @@ public class Enemy : Creature
 
     private void Attack()
     {
-        if (target == null) 
+        // 캐시된 Commander 컴포넌트를 사용하여 공격
+        if (targetCommander != null)
         {
-            Debug.Log($"[Enemy: {name}] Attack called but target is null.");
-            return;
-        }
-
-        Commander commander = target.GetComponent<Commander>();
-        if (commander != null)
-        {
-            Debug.Log($"[Enemy: {name}] Attacking Commander for {EnemyData.attackDamage} damage.");
-            commander.TakeDamage(EnemyData.attackDamage);
+            //Debug.Log($"[Enemy: {name}] Attacking Commander for {EnemyData.attackDamage} damage."); // 이 로그는 너무 자주 발생하므로 주석 처리
+            targetCommander.TakeDamage(EnemyData.attackDamage);
         }
         else
         {
-            Debug.LogWarning($"[Enemy: {name}] Attack target does not have a Commander component.");
+            // 캐시된 컴포넌트가 없다면, 타겟이 파괴되었거나 Commander가 아닐 수 있음
+            Debug.LogWarning($"[Enemy: {name}] Attack target does not have a valid Commander component. Switching back to Moving state.");
+            
+            // 타겟이 유효하지 않으므로 다시 타겟을 찾도록 상태를 변경
+            currentState = EnemyState.Moving;
         }
     }
 
@@ -170,6 +180,7 @@ public class Enemy : Creature
 
     protected override void Die()
     {
+        base.Die(); // 보상 지급 등 공통 로직 실행
         OnEnemyDestroyed?.Invoke(this);
         PoolManager.Instance.Release(gameObject);
     }

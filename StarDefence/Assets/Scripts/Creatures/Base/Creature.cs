@@ -29,6 +29,11 @@ public abstract class Creature : MonoBehaviour
 
     protected virtual void Die()
     {
-        Destroy(gameObject);
+        // 현상금 몬스터인지 확인하고 보상 지급
+        BountyTarget bountyTarget = GetComponent<BountyTarget>();
+        if (bountyTarget != null)
+        {
+            bountyTarget.GrantReward();
+        }
     }
 }

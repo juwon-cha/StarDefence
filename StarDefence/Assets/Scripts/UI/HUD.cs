@@ -10,6 +10,7 @@ public class HUD : UI_Scene
     [SerializeField] private TextMeshProUGUI probeCountText; // 프로브 숫자 표시용
     [SerializeField] private Button probePurchaseButton;
     [SerializeField] private Button commandCenterButton;
+    [SerializeField] private Button bountyButton; // 현상금 버튼 참조
     
     [Header("Probe Target UI References")]
     [SerializeField] private RectTransform commandCenterRect;
@@ -49,6 +50,10 @@ public class HUD : UI_Scene
         {
             commandCenterButton.onClick.AddListener(OnProbePurchaseButtonClicked);
         }
+        if (bountyButton != null)
+        {
+            bountyButton.onClick.AddListener(OnBountyButtonClicked);
+        }
     }
 
     private void OnDestroy()
@@ -72,6 +77,15 @@ public class HUD : UI_Scene
         {
             commandCenterButton.onClick.RemoveListener(OnProbePurchaseButtonClicked);
         }
+        if (bountyButton != null)
+        {
+            bountyButton.onClick.RemoveListener(OnBountyButtonClicked);
+        }
+    }
+
+    private void OnBountyButtonClicked()
+    {
+        UIManager.Instance.ShowPopup<BountyPopupUI>(Constants.BOUNTY_POPUP_UI_NAME);
     }
 
     private void UpdateProbeCountText(int current, int max)

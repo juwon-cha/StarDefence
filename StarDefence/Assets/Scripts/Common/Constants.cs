@@ -20,6 +20,7 @@ public static class Constants
     public const string NEXT_WAVE_BUTTON_UI_NAME = "NextWaveButtonUI";
     public const string PLACE_HERO_CONFIRM_UI_NAME = "PlaceHeroConfirmUI";
     public const string PROBE_PURCHASE_UI_NAME = "ProbePurchaseUI";
+    public const string BOUNTY_POPUP_UI_NAME = "BountyPopupUI";
 
     // 기타 상수들
 }

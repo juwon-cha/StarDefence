@@ -9,6 +9,7 @@ public abstract class Commander : Creature
     private float attackTimer;
     private LayerMask enemyLayerMask;
     private Coroutine scanCoroutine;
+    private Collider2D collider;
 
     private const float SCAN_INTERVAL = 0.2f;
 
@@ -22,6 +23,7 @@ public abstract class Commander : Creature
         attackTimer = 0;
         GameManager.Instance.SetCommander(this);
         scanCoroutine = StartCoroutine(ScanForEnemiesCoroutine());
+        collider = GetComponent<Collider2D>();
 
         // 체력바 생성 및 초기화
         GameObject healthBarGO = PoolManager.Instance.Get(healthBarUIPrefabPath);
@@ -119,11 +121,10 @@ public abstract class Commander : Creature
         }
         this.enabled = false; // Commander 스크립트 비활성화
         
-        // 콜라이더가 존재하면 비활성화 시도
-        Collider2D collider2D = GetComponent<Collider2D>();
-        if (collider2D != null)
+        // 캐시된 콜라이더 비활성화
+        if (collider != null)
         {
-            collider2D.enabled = false;
+            collider.enabled = false;
         }
 
         // TODO: 패배 사망 애니메이션 재생하거나 스프라이트 변경?
