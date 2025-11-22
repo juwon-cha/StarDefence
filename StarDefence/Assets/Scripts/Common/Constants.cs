@@ -21,6 +21,7 @@ public static class Constants
     public const string PLACE_HERO_CONFIRM_UI_NAME = "PlaceHeroConfirmUI";
     public const string PROBE_PURCHASE_UI_NAME = "ProbePurchaseUI";
     public const string BOUNTY_POPUP_UI_NAME = "BountyPopupUI";
+    public const string UPGRADE_POPUP_UI_NAME = "UpgradePopupUI";
 
     // 기타 상수들
 }

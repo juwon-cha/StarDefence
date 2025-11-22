@@ -128,6 +128,26 @@ public class UIManager : Singleton<UIManager>
     /// <param name="canvasType">팝업이 올라갈 캔버스의 종류</param>
     public T ShowPopup<T>(string uiName, UICanvasType canvasType = UICanvasType.ScreenSpaceOverlay) where T : UI_Popup // uiName 매개변수 추가
     {
+        // NextWaveButtonUI가 아닌 다른 팝업을 열려고 할 때
+        if (typeof(T) != typeof(NextWaveButtonUI))
+        {
+            if (popupStack.Count > 0)
+            {
+                var topPopup = popupStack.Peek();
+                // 이미 같은 팝업이 열려있으면 그대로 반환
+                if (topPopup != null && topPopup.GetType() == typeof(T))
+                {
+                    return topPopup as T;
+                }
+                // 최상단 팝업이 NextWaveButtonUI가 아니라면 닫음
+                if (!(topPopup is NextWaveButtonUI))
+                {
+                    CloseTopPopup();
+                }
+            }
+        }
+
+        //  NextWaveButtonUI를 열려고 할 때는 다른 팝업을 닫지 않고 그냥 진행
         if (string.IsNullOrEmpty(uiName))
         {
             uiName = typeof(T).Name;

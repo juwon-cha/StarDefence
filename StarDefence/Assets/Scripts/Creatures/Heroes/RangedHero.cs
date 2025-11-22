@@ -27,7 +27,7 @@ public class RangedHero : Hero
         if (projectile != null)
         {
             // 발사체 초기화
-            projectile.Initialize(currentTarget, HeroData.attackDamage);
+            projectile.Initialize(currentTarget, currentAttackDamage);
         }
     }
 }

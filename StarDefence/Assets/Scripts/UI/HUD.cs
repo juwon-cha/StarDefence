@@ -11,6 +11,7 @@ public class HUD : UI_Scene
     [SerializeField] private Button probePurchaseButton;
     [SerializeField] private Button commandCenterButton;
     [SerializeField] private Button bountyButton; // 현상금 버튼 참조
+    [SerializeField] private Button upgradeButton; // 업그레이드 버튼 참조
     
     [Header("Probe Target UI References")]
     [SerializeField] private RectTransform commandCenterRect;
@@ -54,6 +55,10 @@ public class HUD : UI_Scene
         {
             bountyButton.onClick.AddListener(OnBountyButtonClicked);
         }
+        if (upgradeButton != null)
+        {
+            upgradeButton.onClick.AddListener(OnUpgradeButtonClicked);
+        }
     }
 
     private void OnDestroy()
@@ -81,11 +86,20 @@ public class HUD : UI_Scene
         {
             bountyButton.onClick.RemoveListener(OnBountyButtonClicked);
         }
+        if (upgradeButton != null)
+        {
+            upgradeButton.onClick.RemoveListener(OnUpgradeButtonClicked);
+        }
     }
 
     private void OnBountyButtonClicked()
     {
         UIManager.Instance.ShowPopup<BountyPopupUI>(Constants.BOUNTY_POPUP_UI_NAME);
+    }
+
+    private void OnUpgradeButtonClicked()
+    {
+        UIManager.Instance.ShowPopup<UpgradePopupUI>(Constants.UPGRADE_POPUP_UI_NAME);
     }
 
     private void UpdateProbeCountText(int current, int max)

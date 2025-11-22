@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-// using System.Linq; // LINQ 사용 제거
 using UnityEngine;
 
 public abstract class Hero : Creature
@@ -64,7 +63,7 @@ public abstract class Hero : Creature
         enemyLayerMask = LayerMask.GetMask("Enemy");
         attackTimer = 0;
         
-        RecalculateStats(); // 능력치 초기 계산
+        RecalculateStats(true); // 능력치 초기 계산 및 체력 채우기
         
         if(GameManager.Instance != null)
         {
@@ -89,7 +88,6 @@ public abstract class Hero : Creature
         }
         
         activeBuffs.Clear();
-        RecalculateStats();
         currentTarget = null;
     }
     
@@ -120,23 +118,38 @@ public abstract class Hero : Creature
     }
 
     /// <summary>
-    /// 현재 적용된 버프 목록을 기반으로 최종 능력치 다시 계산
+    /// 현재 적용된 모든 효과(영구 업그레이드, 버프)를 기반으로 최종 능력치 다시 계산
     /// </summary>
-    private void RecalculateStats()
+    /// <param name="healToFull">true일 경우, 계산 후 현재 체력을 최대 체력으로 채움</param>
+    private void RecalculateStats(bool healToFull = false)
     {
-        // 공격 속도 계산
-        float attackSpeedBonus = 0f;
+        // 영구 업그레이드 스탯 보너스 적용
+        float permanentStatBonus = UpgradeManager.Instance.GetStatBonus(HeroData);
+        currentMaxHealth = HeroData.maxHealth * (1 + permanentStatBonus);
+        currentAttackDamage = HeroData.attackDamage * (1 + permanentStatBonus);
+        
+        // 버프 스탯 보너스 적용
+        float attackSpeedBonusFromBuffs = 0f;
         foreach (BuffDataSO buff in activeBuffs)
         {
             if (buff.buffType == BuffType.AttackSpeed)
             {
-                attackSpeedBonus += buff.value;
+                attackSpeedBonusFromBuffs += buff.value;
             }
+            // TODO: 다른 종류의 버프(공격력, 체력 등)가 있다면 여기에 추가 계산
         }
         
-        CurrentAttackInterval = HeroData.attackInterval * (1 - attackSpeedBonus);
+        CurrentAttackInterval = HeroData.attackInterval * (1 - attackSpeedBonusFromBuffs);
         
-        // TODO: 다른 버프들(공격력, 사거리 등) 계산 로직 추가
+        // 체력 갱신
+        // Init 시에만 healToFull이 true가 됨
+        if (healToFull)
+        {
+            currentHealth = currentMaxHealth;
+        }
+        
+        // UI 갱신 요청
+        TriggerHealthChanged();
     }
     
     #endregion

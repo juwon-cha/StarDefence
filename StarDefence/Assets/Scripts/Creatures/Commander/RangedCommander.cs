@@ -30,7 +30,7 @@ public class RangedCommander : Commander
         if (projectile != null)
         {
             // 발사체 초기화
-            projectile.Initialize(currentTarget, CommanderData.attackDamage);
+            projectile.Initialize(currentTarget, currentAttackDamage);
         }
     }
 }

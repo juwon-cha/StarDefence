@@ -18,7 +18,15 @@ public abstract class Commander : Creature
 
     protected override void Start()
     {
-        base.Start();
+        // base.Start()가 SO의 기본값으로 런타임 스탯을 초기화
+        base.Start(); 
+        
+        // 영구 업그레이드 적용
+        float permanentStatBonus = UpgradeManager.Instance.GetCommanderStatBonus();
+        currentMaxHealth = creatureData.maxHealth * (1 + permanentStatBonus);
+        currentAttackDamage = creatureData.attackDamage * (1 + permanentStatBonus);
+        currentHealth = currentMaxHealth; // 체력을 최대로 설정
+        
         enemyLayerMask = LayerMask.GetMask("Enemy");
         attackTimer = 0;
         GameManager.Instance.SetCommander(this);
@@ -105,7 +113,7 @@ public abstract class Commander : Creature
     public override void TakeDamage(float damage)
     {
         base.TakeDamage(damage);
-        Debug.Log($"[Commander] Took {damage} damage. Current health: {currentHealth}/{CreatureData.maxHealth}");
+        Debug.Log($"[Commander] Took {damage} damage. Current health: {currentHealth}/{currentMaxHealth}");
     }
 
     protected override void Die()

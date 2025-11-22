@@ -24,7 +24,7 @@ public class HealthBarUI : MonoBehaviour
             transform.position = trackedCreature.transform.position + Vector3.up * yOffset;
         }
         // 초기 체력바 상태 업데이트
-        UpdateHealthBar(trackedCreature.CurrentHealth, trackedCreature.CreatureData.maxHealth);
+        UpdateHealthBar(trackedCreature.CurrentHealth, trackedCreature.CurrentMaxHealth);
     }
 
     /// <summary>

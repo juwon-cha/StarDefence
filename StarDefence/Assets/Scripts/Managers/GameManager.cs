@@ -221,11 +221,21 @@ public class GameManager : Singleton<GameManager>
             return;
         }
 
-        HeroDataSO heroData = tier1Heroes[Random.Range(0, tier1Heroes.Count)];
-
-        if (!SpendGold(heroData.placementCost))
+        // 소환 비용은 항상 T1 영웅 비용으로 고정
+        int placementCost = tier1Heroes[0].placementCost;
+        if (!SpendGold(placementCost))
         {
             Debug.Log("배치 실패: 골드가 부족합니다.");
+            return;
+        }
+
+        // 업그레이드 매니저를 통해 확률적으로 영웅 등급 결정
+        HeroDataSO heroData = UpgradeManager.Instance.GetRandomHeroForSummon();
+        if (heroData == null)
+        {
+            Debug.LogError("UpgradeManager가 소환할 영웅을 반환하지 않았습니다!");
+            // 돈을 환불하거나 다른 정책 필요
+            AddGold(placementCost); 
             return;
         }
 
@@ -250,7 +260,7 @@ public class GameManager : Singleton<GameManager>
         tile.SetHero(hero);
         placedHeroes.Add(hero);
 
-        Debug.Log($"{heroData.heroName} 배치됨! 총 배치된 영웅 수: {placedHeroes.Count}");
+        Debug.Log($"{heroData.heroName}(T{heroData.tier}) 배치됨! 총 배치된 영웅 수: {placedHeroes.Count}");
     }
 
     private void TryUpgradeHero(Hero heroToUpgrade)

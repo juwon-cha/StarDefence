@@ -8,7 +8,7 @@ public class MeleeHero : Hero
         
         // TODO: 애니메이션 또는 이펙트 재생
         
-        Debug.Log($"{HeroData.heroName} attacks {currentTarget.name} for {HeroData.attackDamage} damage.");
-        currentTarget.TakeDamage(HeroData.attackDamage);
+        Debug.Log($"{HeroData.heroName} attacks {currentTarget.name} for {currentAttackDamage} damage.");
+        currentTarget.TakeDamage(currentAttackDamage);
     }
 }
