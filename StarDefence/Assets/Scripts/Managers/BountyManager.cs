@@ -1,6 +1,37 @@
 using UnityEngine;
 using System.Collections.Generic;
 
+/// <summary>
+/// 현상금 몬스터에게 부착될 컴포넌트
+/// </summary>
+public class BountyTarget : MonoBehaviour
+{
+    private int gold;
+    private int mineral;
+
+    public void SetReward(int gold, int mineral)
+    {
+        this.gold = gold;
+        this.mineral = mineral;
+    }
+
+    public void GrantReward()
+    {
+        if (GameManager.Instance != null)
+        {
+            if (gold > 0)
+            {
+                GameManager.Instance.AddGold(gold);
+            }
+            if (mineral > 0)
+            {
+                GameManager.Instance.AddMinerals(mineral);
+            }
+            Debug.Log($"현상금 보상으로 골드 {gold}, 미네랄 {mineral}을 획득했습니다.");
+        }
+    }
+}
+
 public class BountyManager : Singleton<BountyManager>
 {
     [SerializeField] private List<BountyDataSO> bountyDatas; // 현상금 몬스터 데이터 목록
@@ -63,7 +94,18 @@ public class BountyManager : Singleton<BountyManager>
         Enemy enemy = monsterObj.GetComponent<Enemy>();
         if (enemy != null)
         {
-            enemy.Initialize(data.enemyData, GameManager.Instance.Commander.transform);
+            // WaveManager의 활성화된 적 리스트에 등록
+            WaveManager.Instance.RegisterEnemy(enemy);
+            
+            bool initialized = enemy.Initialize(data.enemyData, GameManager.Instance.Commander.transform);
+            if (!initialized)
+            {
+                // 초기화 실패 시 ActiveEnemies 리스트에서 다시 제거
+                WaveManager.Instance.ActiveEnemies.Remove(enemy);
+
+                return false;
+            }
+
             enemy.IsBountyTarget = true; // 현상금 몬스터 플래그 설정
         }
         else
@@ -93,36 +135,5 @@ public class BountyManager : Singleton<BountyManager>
     public List<BountyDataSO> GetBountyList()
     {
         return bountyDatas;
-    }
-}
-
-/// <summary>
-/// 현상금 몬스터에게 부착될 컴포넌트
-/// </summary>
-public class BountyTarget : MonoBehaviour
-{
-    private int gold;
-    private int mineral;
-
-    public void SetReward(int gold, int mineral)
-    {
-        this.gold = gold;
-        this.mineral = mineral;
-    }
-
-    public void GrantReward()
-    {
-        if (GameManager.Instance != null)
-        {
-            if (gold > 0)
-            {
-                GameManager.Instance.AddGold(gold);
-            }
-            if (mineral > 0)
-            {
-                GameManager.Instance.AddMinerals(mineral);
-            }
-            Debug.Log($"현상금 보상으로 골드 {gold}, 미네랄 {mineral}을 획득했습니다.");
-        }
     }
 }

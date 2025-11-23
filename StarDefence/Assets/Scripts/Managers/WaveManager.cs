@@ -10,6 +10,8 @@ public class WaveManager : Singleton<WaveManager>
     [Tooltip("다음 웨이브 시작 버튼을 누를 수 있는 제한 시간")]
     public float timeToPressButton = 15f;
 
+    public List<Enemy> ActiveEnemies { get; private set; } = new List<Enemy>();
+
     private int currentWaveIndex = -1;
     private int enemiesAlive = 0;
     private bool isSpawning = false;
@@ -22,7 +24,10 @@ public class WaveManager : Singleton<WaveManager>
 
     void OnDisable()
     {
-        Enemy.OnEnemyDestroyed -= HandleEnemyDestroyed;
+        if (Instance != null) // 싱글톤 인스턴스가 살아있을 때만 실행
+        {
+            Enemy.OnEnemyDestroyed -= HandleEnemyDestroyed;
+        }
     }
 
     void Start()
@@ -108,27 +113,47 @@ public class WaveManager : Singleton<WaveManager>
 
         foreach (var enemyInfo in currentWave.enemiesToSpawn)
         {
-            enemiesAlive += enemyInfo.count;
             for (int i = 0; i < enemyInfo.count; i++)
             {
+                enemiesAlive++;
+                
                 Transform spawnPoint = GridManager.Instance.SpawnPoint;
                 Transform commanderTransform = GameManager.Instance.Commander.transform;
 
                 if (spawnPoint == null || commanderTransform == null)
                 {
                     Debug.LogError("Spawn point or Commander not set.");
+                    enemiesAlive--; 
                     yield break;
                 }
 
-                // PoolManager를 사용하여 몬스터 오브젝트를 가져옴
                 GameObject enemyGO = PoolManager.Instance.Get(enemyInfo.enemyData.FullEnemyPrefabPath);
-                if(enemyGO == null) continue;
-
-                // 위치와 회전 초기화
-                enemyGO.transform.position = spawnPoint.position;
-                enemyGO.transform.rotation = Quaternion.identity;
+                if(enemyGO == null) 
+                {
+                    enemiesAlive--;
+                    continue;
+                }
                 
-                enemyGO.GetComponent<Enemy>().Initialize(enemyInfo.enemyData, commanderTransform);
+                Enemy enemy = enemyGO.GetComponent<Enemy>();
+                if(enemy == null)
+                {
+                    enemiesAlive--;
+                    PoolManager.Instance.Release(enemyGO);
+                    continue;
+                }
+                
+                ActiveEnemies.Add(enemy);
+                
+                enemy.transform.position = spawnPoint.position;
+                enemy.transform.rotation = Quaternion.identity;
+                
+                // 초기화 성공 여부 확인
+                bool initialized = enemy.Initialize(enemyInfo.enemyData, commanderTransform);
+                if (!initialized)
+                {
+                    enemiesAlive--; // 카운트 복구
+                    ActiveEnemies.Remove(enemy); // 리스트에서 제거
+                }
 
                 yield return new WaitForSeconds(currentWave.spawnInterval);
             }
@@ -138,15 +163,34 @@ public class WaveManager : Singleton<WaveManager>
     }
     #endregion
 
-    #region 이벤트 핸들러
-    private void HandleEnemyDestroyed(Enemy enemy) // Enemy 인자 추가
+    /// <summary>
+    /// 웨이브 시스템 외부에서 생성된 적을 활성화 리스트에 등록(현상금 몬스터)
+    /// </summary>
+    public void RegisterEnemy(Enemy enemy)
     {
-        enemiesAlive--;
+        if (enemy != null && !ActiveEnemies.Contains(enemy))
+        {
+            ActiveEnemies.Add(enemy);
+        }
+    }
+
+    private void HandleEnemyDestroyed(Enemy enemy)
+    {
+        // 현상금 몬스터가 아닐 경우에만 웨이브 생존자 카운트 감소
+        if (!enemy.IsBountyTarget)
+        {
+            enemiesAlive--;
+        }
+        
+        // 활성화된 적 리스트에서는 항상 제거
+        if (ActiveEnemies.Contains(enemy))
+        {
+            ActiveEnemies.Remove(enemy);
+        }
 
         if (!isSpawning && enemiesAlive <= 0)
         {
             PrepareForNextWave();
         }
     }
-    #endregion
 }

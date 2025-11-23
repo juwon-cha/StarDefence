@@ -187,16 +187,22 @@ public abstract class Hero : Creature
 
     private void FindClosestEnemy()
     {
-        Collider2D[] colliders = Physics2D.OverlapCircleAll(transform.position, HeroData.attackRange, enemyLayerMask);
+        var activeEnemies = WaveManager.Instance.ActiveEnemies;
+        if (activeEnemies == null || activeEnemies.Count == 0)
+        {
+            currentTarget = null;
+            return;
+        }
 
         float closestDistanceSqr = float.MaxValue;
         Enemy closestEnemy = null;
         bool isWaveActive = GameManager.Instance.Status == GameStatus.Wave;
+        float attackRangeSqr = HeroData.attackRange * HeroData.attackRange;
 
-        foreach (var col in colliders)
+        foreach (var enemy in activeEnemies)
         {
-            Enemy enemy = col.GetComponent<Enemy>();
-            if (enemy == null || !enemy.gameObject.activeSelf)
+            // 적이 비활성화 상태이면 건너뜀
+            if (!enemy.gameObject.activeSelf)
             {
                 continue;
             }
@@ -209,7 +215,8 @@ public abstract class Hero : Creature
             
             float distanceSqr = (transform.position - enemy.transform.position).sqrMagnitude;
 
-            if (distanceSqr < closestDistanceSqr)
+            // 사거리 내에 있고 현재까지 가장 가까운 적인지 확인
+            if (distanceSqr < attackRangeSqr && distanceSqr < closestDistanceSqr)
             {
                 closestDistanceSqr = distanceSqr;
                 closestEnemy = enemy;

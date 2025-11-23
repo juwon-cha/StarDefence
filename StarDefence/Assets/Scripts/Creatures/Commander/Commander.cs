@@ -9,7 +9,7 @@ public abstract class Commander : Creature
     private float attackTimer;
     private LayerMask enemyLayerMask;
     private Coroutine scanCoroutine;
-    private Collider2D collider;
+    private Collider2D _collider;
 
     private const float SCAN_INTERVAL = 0.2f;
 
@@ -31,7 +31,7 @@ public abstract class Commander : Creature
         attackTimer = 0;
         GameManager.Instance.SetCommander(this);
         scanCoroutine = StartCoroutine(ScanForEnemiesCoroutine());
-        collider = GetComponent<Collider2D>();
+        _collider = GetComponent<Collider2D>();
 
         // 체력바 생성 및 초기화
         GameObject healthBarGO = PoolManager.Instance.Get(healthBarUIPrefabPath);
@@ -86,22 +86,27 @@ public abstract class Commander : Creature
 
     private void FindClosestEnemy()
     {
-        Collider2D[] colliders = Physics2D.OverlapCircleAll(transform.position, CommanderData.attackRange, enemyLayerMask);
+        var activeEnemies = WaveManager.Instance.ActiveEnemies;
+        if (activeEnemies == null || activeEnemies.Count == 0)
+        {
+            currentTarget = null;
+            return;
+        }
 
         float closestDistanceSqr = float.MaxValue;
         Enemy closestEnemy = null;
+        float attackRangeSqr = CommanderData.attackRange * CommanderData.attackRange;
 
-        foreach (var col in colliders)
+        foreach (var enemy in activeEnemies)
         {
-            Enemy enemy = col.GetComponent<Enemy>();
-            if (enemy == null)
+            if (!enemy.gameObject.activeSelf)
             {
                 continue;
             }
-
+            
             float distanceSqr = (transform.position - enemy.transform.position).sqrMagnitude;
 
-            if (distanceSqr < closestDistanceSqr)
+            if (distanceSqr < attackRangeSqr && distanceSqr < closestDistanceSqr)
             {
                 closestDistanceSqr = distanceSqr;
                 closestEnemy = enemy;
@@ -130,9 +135,9 @@ public abstract class Commander : Creature
         this.enabled = false; // Commander 스크립트 비활성화
         
         // 캐시된 콜라이더 비활성화
-        if (collider != null)
+        if (_collider != null)
         {
-            collider.enabled = false;
+            _collider.enabled = false;
         }
 
         // TODO: 패배 사망 애니메이션 재생하거나 스프라이트 변경?

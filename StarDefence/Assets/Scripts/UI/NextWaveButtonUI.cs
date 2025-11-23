@@ -18,6 +18,7 @@ public class NextWaveButtonUI : UI_Popup
     public override void Initialize()
     {
         base.Initialize();
+        IsIndependentPopup = true;
     }
 
     public void Initialize(float duration, Action onCompleteCallback)

@@ -16,8 +16,8 @@ public class Enemy : Creature
     private int waypointIndex = 0;
     private float attackTimer;
 
-    private readonly string _healthBarUIPrefabPath = Constants.UI_ROOT_PATH + Constants.UI_POPUP_SUB_PATH + Constants.HEALTH_BAR_UI_PREFAB_NAME;
-    private HealthBarUI _healthBarUIInstance;
+    private readonly string healthBarUIPrefabPath = Constants.UI_ROOT_PATH + Constants.UI_POPUP_SUB_PATH + Constants.HEALTH_BAR_UI_PREFAB_NAME;
+    private HealthBarUI healthBarUIInstance;
 
     public bool IsBountyTarget { get; set; }
 
@@ -30,20 +30,20 @@ public class Enemy : Creature
             currentHealth = creatureData.maxHealth;
         }
 
-        if (_healthBarUIInstance != null)
+        if (healthBarUIInstance != null)
         {
             if (PoolManager.Instance != null)
             {
-                PoolManager.Instance.Release(_healthBarUIInstance.gameObject);
+                PoolManager.Instance.Release(healthBarUIInstance.gameObject);
             }
-            _healthBarUIInstance = null;
+            healthBarUIInstance = null;
         }
 
         targetCommander = null; // 풀에 반환될 때 캐시된 컴포넌트 초기화
         IsBountyTarget = false; // 풀에 반환될 때 플래그 초기화
     }
 
-    public void Initialize(EnemyDataSO data, Transform targetTransform)
+    public bool Initialize(EnemyDataSO data, Transform targetTransform)
     {
         creatureData = data;
         currentHealth = EnemyData.maxHealth;
@@ -61,7 +61,10 @@ public class Enemy : Creature
         {
             Debug.LogError($"Path not found for {name}!", this);
             PoolManager.Instance.Release(gameObject);
+            return false; // 초기화 실패
         }
+
+        return true; // 초기화 성공
     }
 
     void Update()
@@ -139,7 +142,6 @@ public class Enemy : Creature
         // 캐시된 Commander 컴포넌트를 사용하여 공격
         if (targetCommander != null)
         {
-            //Debug.Log($"[Enemy: {name}] Attacking Commander for {EnemyData.attackDamage} damage."); // 이 로그는 너무 자주 발생하므로 주석 처리
             targetCommander.TakeDamage(EnemyData.attackDamage);
         }
         else
@@ -154,22 +156,22 @@ public class Enemy : Creature
 
     public override void TakeDamage(float damage)
     {
-        if (_healthBarUIInstance == null)
+        if (healthBarUIInstance == null)
         {
-            GameObject healthBarGO = PoolManager.Instance.Get(_healthBarUIPrefabPath);
+            GameObject healthBarGO = PoolManager.Instance.Get(healthBarUIPrefabPath);
             if (healthBarGO == null) return;
 
             healthBarGO.transform.SetParent(UIManager.Instance.WorldSpaceCanvas.transform);
             healthBarGO.transform.localScale = Vector3.one;
             
-            _healthBarUIInstance = healthBarGO.GetComponent<HealthBarUI>();
-            if (_healthBarUIInstance != null)
+            healthBarUIInstance = healthBarGO.GetComponent<HealthBarUI>();
+            if (healthBarUIInstance != null)
             {
-                _healthBarUIInstance.Initialize(this);
+                healthBarUIInstance.Initialize(this);
             }
             else
             {
-                Debug.LogError($"[Enemy] HealthBarUI component not found on prefab: {_healthBarUIPrefabPath}");
+                Debug.LogError($"[Enemy] HealthBarUI component not found on prefab: {healthBarUIPrefabPath}");
                 PoolManager.Instance.Release(healthBarGO);
                 return;
             }
