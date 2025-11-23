@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 100
   attackDamage: 15
-  attackRange: 3
+  attackRange: 4
   attackInterval: 0.5
   heroName: MythicRanged
   heroDescription: MythicRanged
@@ -27,3 +27,5 @@ MonoBehaviour:
   transcendenceUpgrade: {fileID: 0}
   upgradeCost: 0
   nextTierHero: {fileID: 0}
+  mythicHeroData: {fileID: 0}
+  isMythicHero: 1
