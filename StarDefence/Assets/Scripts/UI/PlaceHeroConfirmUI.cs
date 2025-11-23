@@ -88,5 +88,37 @@ public class PlaceHeroConfirmUI : UI_Popup
             
             transform.position = tile.transform.position + new Vector3(0, 1, 0);
         }
+        
+        /// <summary>
+        /// 영웅 초월 확인 UI 설정
+        /// </summary>
+        public void SetDataForTranscendence(Hero hero, UpgradeDataSO transcendenceUpgrade)
+        {
+            if (hero == null || transcendenceUpgrade == null)
+            {
+                Debug.LogError("SetDataForTranscendence: 영웅 또는 초월 업그레이드 데이터가 null입니다.");
+                UIManager.Instance.ClosePopup(this);
+                return;
+            }
+
+            confirmButton.onClick.RemoveAllListeners();
+            confirmButton.onClick.AddListener(() =>
+            {
+                GameManager.Instance.ConfirmTranscendence(hero, transcendenceUpgrade);
+                UIManager.Instance.ClosePopup(this); // ConfirmTranscendence 호출 후 팝업 스스로 닫기
+            });
+
+            costText.text = UpgradeManager.Instance.GetCurrentCost(transcendenceUpgrade.upgradeType).ToString();
+            if (confirmButtonText != null)
+            {
+                confirmButtonText.text = "Mythic";
+            }
+            if (resourceIcon != null)
+            {
+                resourceIcon.sprite = transcendenceUpgrade.useGold ? ResourceManager.Instance.SpriteDB.goldIcon : ResourceManager.Instance.SpriteDB.mineralIcon;
+            }
+
+            transform.position = hero.transform.position + new Vector3(0, 1, 0);
+        }
     }
     

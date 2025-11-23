@@ -50,33 +50,60 @@ public class UpgradeManager : Singleton<UpgradeManager>
     public int GetCurrentCost(UpgradeType type)
     {
         var data = upgradeDatas.FirstOrDefault(d => d.upgradeType == type);
-        if (data == null) return int.MaxValue;
+        if (data == null)
+        {
+            Debug.LogError($"[UpgradeManager] GetCurrentCost: 업그레이드 데이터 ({type})를 찾을 수 없습니다! Upgrade Datas 리스트에 해당 SO가 할당되었는지 확인하세요.");
+            return int.MaxValue;
+        }
+
+        // 초월 업그레이드는 개별 영웅이 초월 여부를 관리하므로 GetCurrentCost는 항상 baseCost 반환
+        // 이미 초월했는지 여부는 GameManager와 Hero 인스턴스에서 판단
+        if (data.isTranscendenceUpgrade)
+        {
+            return data.baseCost; // 초월은 costIncreasePerLevel이 0이므로
+        }
         
         return data.baseCost + (GetUpgradeLevel(type) * data.costIncreasePerLevel);
     }
+
+    public UpgradeDataSO GetUpgradeData(UpgradeType type)
+    {
+        return upgradeDatas.FirstOrDefault(d => d.upgradeType == type);
+    }
     
-    public void PurchaseUpgrade(UpgradeType type)
+    public bool PurchaseUpgrade(UpgradeType type)
     {
         var data = upgradeDatas.FirstOrDefault(d => d.upgradeType == type);
         if (data == null)
         {
             Debug.LogError($"[UpgradeManager] 해당 타입의 업그레이드 데이터를 찾을 수 없습니다: {type}");
-            return;
+            return false;
         }
-
+        
         int cost = GetCurrentCost(type);
+        // GetCurrentCost에서 이미 int.MaxValue를 반환했으면 구매 불가능
+        // 하지만 isTranscendenceUpgrade의 GetCurrentCost는 항상 baseCost를 반환하므로 여기서는 비용 부족만 체크하면 됨.
+        
         bool success = data.useGold ? GameManager.Instance.SpendGold(cost) : GameManager.Instance.SpendMinerals(cost);
 
         if (success)
         {
-            upgradeLevels[type]++;
-            Debug.Log($"[UpgradeManager] {type} 업그레이드 구매 성공! 현재 레벨: {upgradeLevels[type]}");
+            // 초월 업그레이드는 UpgradeManager에서 레벨을 추적하지 않음(Hero 인스턴스가 직접 IsTranscended로 관리)
+            if (!data.isTranscendenceUpgrade)
+            {
+                upgradeLevels[type]++; // 일반 업그레이드는 레벨 증가
+            }
+            // else: 초월 업그레이드는 upgradeLevels를 건드리지 않음
+            
+            Debug.Log($"[UpgradeManager] {type} 업그레이드 구매 성공!");
             OnUpgradePurchased?.Invoke(type);
+            return true;
         }
         else
         {
             Debug.LogWarning($"[UpgradeManager] {type} 업그레이드 구매 실패: 재화 부족");
             // TODO: 재화 부족 UI 피드백 (예: 사운드, 화면 흔들림)
+            return false;
         }
     }
     
@@ -104,7 +131,7 @@ public class UpgradeManager : Singleton<UpgradeManager>
         return tier1Heroes.Any() ? tier1Heroes[Random.Range(0, tier1Heroes.Count)] : null;
     }
     
-    // 영웅 스탯 보너스를 적용한 새로운 임시 SO를 반환 (개념 예시, 실제 적용은 Hero.cs에서)
+    // 영웅 스탯 보너스를 적용한 새로운 임시 SO 반환(실제 적용은 Hero.cs에서)
     public float GetStatBonus(HeroDataSO heroData)
     {
         if (heroData.tier <= 2)

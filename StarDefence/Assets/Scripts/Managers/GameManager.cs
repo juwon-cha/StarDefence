@@ -29,6 +29,7 @@ public class GameManager : Singleton<GameManager>
     public List<HeroDataSO> tier1Heroes;
 
     public Commander Commander { get; private set; }
+    public Hero SelectedHero { get; private set; }
     private List<Hero> placedHeroes = new List<Hero>();
 
     public GameStatus Status { get; private set; }
@@ -93,24 +94,59 @@ public class GameManager : Singleton<GameManager>
 
         if (tile.PlacedHero != null)
         {
-            TryUpgradeHero(tile.PlacedHero);
-        }
-        else if (tile.IsPlaceable)
-        {
-            int cost = tier1Heroes.Any() ? tier1Heroes[0].placementCost : 0;
-            var confirmUI = UIManager.Instance.ShowWorldSpacePopup<PlaceHeroConfirmUI>(Constants.PLACE_HERO_CONFIRM_UI_NAME);
-            if (confirmUI != null)
+            SetSelectedHero(tile.PlacedHero);
+            
+            // 최종 티어 영웅인지 확인
+            if (tile.PlacedHero.HeroData.nextTierHero == null)
             {
-                confirmUI.SetDataForPlacement(tile, cost);
+                // 초월하지 않은 최종 티어 영웅이면 초월 UI를 띄움
+                if (!tile.PlacedHero.IsTranscended)
+                {
+                    Debug.Log("최종 티어 영웅입니다. 초월 업그레이드를 시도합니다.");
+                    // 초월 업그레이드 데이터가 할당되어 있는지 확인
+                    if (tile.PlacedHero.HeroData.transcendenceUpgrade != null)
+                    {
+                        var confirmUI = UIManager.Instance.ShowWorldSpacePopup<PlaceHeroConfirmUI>(Constants.PLACE_HERO_CONFIRM_UI_NAME);
+                        if (confirmUI != null)
+                        {
+                            confirmUI.SetDataForTranscendence(tile.PlacedHero, tile.PlacedHero.HeroData.transcendenceUpgrade);
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"영웅 {tile.PlacedHero.HeroData.heroName}의 HeroDataSO에 초월 업그레이드 데이터가 할당되지 않았습니다.");
+                    }
+                }
+                else
+                {
+                    Debug.Log("이미 초월한 신화 등급 영웅입니다.");
+                }
+            }
+            else
+            {
+                // 최종 티어가 아니면 기존 융합 업그레이드 시도
+                TryUpgradeHero(tile.PlacedHero);
             }
         }
-        else if (tile.IsFixable)
+        else 
         {
-            int cost = CalculateCurrentRepairCost();
-            var confirmUI = UIManager.Instance.ShowWorldSpacePopup<PlaceHeroConfirmUI>(Constants.PLACE_HERO_CONFIRM_UI_NAME);
-            if (confirmUI != null)
+            DeselectHero(); // 빈 타일 클릭 시 영웅 선택 해제
+            
+            if (tile.IsPlaceable)
             {
-                confirmUI.SetDataForRepair(tile, cost);
+                var confirmUI = UIManager.Instance.ShowWorldSpacePopup<PlaceHeroConfirmUI>(Constants.PLACE_HERO_CONFIRM_UI_NAME);
+                if (confirmUI != null)
+                {
+                    confirmUI.SetDataForPlacement(tile, tier1Heroes.Any() ? tier1Heroes[0].placementCost : 0);
+                }
+            }
+            else if (tile.IsFixable)
+            {
+                var confirmUI = UIManager.Instance.ShowWorldSpacePopup<PlaceHeroConfirmUI>(Constants.PLACE_HERO_CONFIRM_UI_NAME);
+                if (confirmUI != null)
+                {
+                    confirmUI.SetDataForRepair(tile, CalculateCurrentRepairCost());
+                }
             }
         }
     }
@@ -213,6 +249,64 @@ public class GameManager : Singleton<GameManager>
 
     #region 영웅 배치 및 업그레이드
 
+    /// <summary>
+    /// 지정된 HeroDataSO를 사용하여 특정 타일에 영웅을 생성하고 초기화
+    /// </summary>
+    /// <param name="heroData">생성할 영웅의 데이터</param>
+    /// <param name="targetTile">영웅을 배치할 타일</param>
+    /// <returns>생성된 Hero 인스턴스 또는 실패 시 null</returns>
+    public Hero SpawnHeroOnTile(HeroDataSO heroData, Tile targetTile)
+    {
+        if (heroData == null || targetTile == null)
+        {
+            Debug.LogError("SpawnHeroOnTile: HeroData 또는 TargetTile이 null입니다.");
+            return null;
+        }
+        if (string.IsNullOrEmpty(heroData.FullHeroPrefabPath))
+        {
+            Debug.LogError($"SpawnHeroOnTile: 영웅 '{heroData.heroName}'의 HeroDataSO에 유효한 프리팹 경로가 없습니다!");
+            return null;
+        }
+
+        GameObject heroGO = PoolManager.Instance.Get(heroData.FullHeroPrefabPath);
+        if (heroGO == null) return null;
+
+        heroGO.transform.position = targetTile.transform.position;
+        heroGO.transform.rotation = Quaternion.identity;
+
+        Hero newHero = heroGO.GetComponent<Hero>();
+        if (newHero == null)
+        {
+            Debug.LogError($"SpawnHeroOnTile: 프리팹 '{heroData.FullHeroPrefabPath}'에서 Hero 컴포넌트를 찾을 수 없습니다.");
+            PoolManager.Instance.Release(heroGO);
+            return null;
+        }
+
+        newHero.Init(heroData, targetTile);
+        targetTile.SetHero(newHero);
+        placedHeroes.Add(newHero);
+
+        Debug.Log($"Hero spawned: {heroData.heroName}(T{heroData.tier}) on tile {targetTile.name}. Total heroes: {placedHeroes.Count}");
+        return newHero;
+    }
+
+    public void SetSelectedHero(Hero hero)
+    {
+        SelectedHero = hero;
+        Debug.Log($"영웅 선택됨: {hero.HeroData.heroName}");
+        // TODO: 선택된 영웅을 시각적으로 표시하는 UI 로직 추가
+    }
+
+    public void DeselectHero()
+    {
+        if (SelectedHero != null)
+        {
+            Debug.Log($"영웅 선택 해제: {SelectedHero.HeroData.heroName}");
+            SelectedHero = null;
+            // TODO: 영웅 선택 표시 UI 해제
+        }
+    }
+
     public void ConfirmPlaceHero(Tile tile)
     {
         if (!tier1Heroes.Any())
@@ -221,46 +315,22 @@ public class GameManager : Singleton<GameManager>
             return;
         }
 
-        // 소환 비용은 항상 T1 영웅 비용으로 고정
         int placementCost = tier1Heroes[0].placementCost;
         if (!SpendGold(placementCost))
         {
             Debug.Log("배치 실패: 골드가 부족합니다.");
             return;
         }
-
-        // 업그레이드 매니저를 통해 확률적으로 영웅 등급 결정
+        
         HeroDataSO heroData = UpgradeManager.Instance.GetRandomHeroForSummon();
         if (heroData == null)
         {
             Debug.LogError("UpgradeManager가 소환할 영웅을 반환하지 않았습니다!");
-            // 돈을 환불하거나 다른 정책 필요
             AddGold(placementCost); 
             return;
         }
-
-        if (string.IsNullOrEmpty(heroData.FullHeroPrefabPath))
-        {
-            Debug.LogError($"선택된 영웅 '{heroData.heroName}'의 HeroDataSO에 유효한 프리팹 경로가 없습니다!");
-            return;
-        }
-
-        GameObject heroGO = PoolManager.Instance.Get(heroData.FullHeroPrefabPath);
-        if (heroGO == null)
-        {
-            return;
-        }
-
-        heroGO.transform.position = tile.transform.position;
-        heroGO.transform.rotation = Quaternion.identity;
-
-        Hero hero = heroGO.GetComponent<Hero>();
-        hero.Init(heroData, tile);
-
-        tile.SetHero(hero);
-        placedHeroes.Add(hero);
-
-        Debug.Log($"{heroData.heroName}(T{heroData.tier}) 배치됨! 총 배치된 영웅 수: {placedHeroes.Count}");
+        
+        SpawnHeroOnTile(heroData, tile);
     }
 
     private void TryUpgradeHero(Hero heroToUpgrade)
@@ -300,23 +370,49 @@ public class GameManager : Singleton<GameManager>
 
         RemoveHero(heroToUpgrade);
         RemoveHero(mergePartner);
-
-        GameObject newHeroGO = PoolManager.Instance.Get(nextTierHeroData.FullHeroPrefabPath);
-        if (newHeroGO == null)
+        
+        SpawnHeroOnTile(nextTierHeroData, targetTile); // 헬퍼 메서드 사용
+    }
+    
+    public void ConfirmTranscendence(Hero hero, UpgradeDataSO transcendenceUpgrade)
+    {
+        if (hero == null || transcendenceUpgrade == null)
         {
+            Debug.LogError("ConfirmTranscendence: 영웅 또는 초월 업그레이드 데이터가 null입니다.");
             return;
         }
+        
+        // 비용 확인 및 지불
+        int cost = UpgradeManager.Instance.GetCurrentCost(transcendenceUpgrade.upgradeType);
+        bool success = transcendenceUpgrade.useGold ? SpendGold(cost) : SpendMinerals(cost);
 
-        newHeroGO.transform.position = targetTile.transform.position;
-        newHeroGO.transform.rotation = Quaternion.identity;
-
-        Hero newHero = newHeroGO.GetComponent<Hero>();
-        newHero.Init(nextTierHeroData, targetTile);
-
-        targetTile.SetHero(newHero);
-        placedHeroes.Add(newHero);
-
-        Debug.Log($"업그레이드 성공! {nextTierHeroData.heroName} 생성됨. 총 배치된 영웅 수: {placedHeroes.Count}");
+        if (success)
+        {
+            UpgradeManager.Instance.PurchaseUpgrade(transcendenceUpgrade.upgradeType);
+            
+            if (hero.HeroData.mythicHeroData != null)
+            {
+                Tile currentTile = hero.placedTile; // 기존 영웅의 타일 저장
+                RemoveHero(hero); // 기존 영웅 제거
+                
+                // 신화 등급 영웅 생성 및 배치
+                Hero newMythicHero = SpawnHeroOnTile(hero.HeroData.mythicHeroData, currentTile);
+                if (newMythicHero != null)
+                {
+                    Debug.Log($"영웅 {hero.HeroData.heroName}이(가) 성공적으로 초월하여 {newMythicHero.HeroData.heroName}으로 변신했습니다!");
+                }
+            }
+            else
+            {
+                Debug.LogWarning($"초월했지만 영웅 {hero.HeroData.heroName}의 HeroDataSO에 mythicHeroData가 할당되지 않아 변신하지 못했습니다.");
+            }
+        }
+        else
+        {
+            Debug.LogWarning($"초월 실패: {hero.HeroData.heroName} 초월에 필요한 재화가 부족합니다.");
+        }
+        
+        DeselectHero();
     }
 
     private void RemoveHero(Hero hero)

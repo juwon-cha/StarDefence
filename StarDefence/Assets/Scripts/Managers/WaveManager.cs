@@ -188,7 +188,8 @@ public class WaveManager : Singleton<WaveManager>
             ActiveEnemies.Remove(enemy);
         }
 
-        if (!isSpawning && enemiesAlive <= 0)
+        // 웨이브가 모두 클리어되었고 적이 더 이상 스폰되지 않으며 아직 Build 상태가 아니라면 다음 웨이브 준비
+        if (!isSpawning && enemiesAlive <= 0 && GameManager.Instance.Status != GameStatus.Build)
         {
             PrepareForNextWave();
         }

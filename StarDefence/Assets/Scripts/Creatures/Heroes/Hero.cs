@@ -6,6 +6,10 @@ public abstract class Hero : Creature
 {
     public HeroDataSO HeroData => creatureData as HeroDataSO;
     public Tile placedTile { get; private set; }
+    
+    // 초월 시스템
+    public bool IsTranscended { get; private set; } = false;
+    protected float mythicSkillCooldownTimer;
 
     // 버프 시스템
     public float CurrentAttackInterval { get; private set; }
@@ -32,6 +36,22 @@ public abstract class Hero : Creature
         }
     }
 
+    private void OnEnable()
+    {
+        if (UpgradeManager.Instance != null)
+        {
+            UpgradeManager.Instance.OnUpgradePurchased += HandleUpgradePurchased;
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (UpgradeManager.Instance != null)
+        {
+            UpgradeManager.Instance.OnUpgradePurchased -= HandleUpgradePurchased;
+        }
+    }
+
     protected virtual void Update()
     {
         // 유효한 타겟인지 확인(죽었거나 사거리를 벗어났는지)
@@ -44,6 +64,12 @@ public abstract class Hero : Creature
         
         // 공격 타이머 감소
         attackTimer -= Time.deltaTime;
+        
+        // 스킬 쿨다운 타이머 감소
+        if (mythicSkillCooldownTimer > 0)
+        {
+            mythicSkillCooldownTimer -= Time.deltaTime;
+        }
 
         // 타겟이 있고 공격할 수 있다면 공격
         if (attackTimer <= 0f && currentTarget != null)
@@ -62,6 +88,8 @@ public abstract class Hero : Creature
 
         enemyLayerMask = LayerMask.GetMask("Enemy");
         attackTimer = 0;
+        IsTranscended = HeroData.isMythicHero; // HeroDataSO의 isMythicHero 플래그에 따라 초기화
+        mythicSkillCooldownTimer = 0; // 초기화 시 쿨다운 초기화
         
         RecalculateStats(true); // 능력치 초기 계산 및 체력 채우기
         
@@ -92,6 +120,46 @@ public abstract class Hero : Creature
     }
     
     protected abstract void Attack();
+    
+    #region 초월 시스템
+    
+    public void Transcend()
+    {
+        if (IsTranscended)
+        {
+            return;
+        }
+
+        IsTranscended = true;
+        // TODO: 초월 시 파티클 효과, 스탯 보너스 등 추가 가능
+        Debug.Log($"{HeroData.heroName}이(가) 신화 등급으로 초월했습니다!");
+    }
+    
+    private void HandleUpgradePurchased(UpgradeType purchasedType)
+    {
+        // 현재 선택된 영웅이 이 영웅인지 확인 (UI에서 해당 영웅을 선택한 상태에서 업그레이드 구매 시)
+        if (GameManager.Instance.SelectedHero != this)
+        {
+            return;
+        }
+
+        UpgradeDataSO upgradeData = UpgradeManager.Instance.GetUpgradeData(purchasedType);
+        if (upgradeData == null)
+        {
+            return;
+        }
+
+        // 구매된 업그레이드가 초월 업그레이드이고 이 영웅이 최종 티어이며 아직 초월하지 않았다면
+        if (upgradeData.isTranscendenceUpgrade && HeroData.nextTierHero == null && !IsTranscended)
+        {
+            Transcend();
+            // 초월 후 선택 해제
+            GameManager.Instance.DeselectHero();
+            // TODO: 초월 UI 닫기
+        }
+    }
+    
+    #endregion
     
     #region 버프 시스템
     

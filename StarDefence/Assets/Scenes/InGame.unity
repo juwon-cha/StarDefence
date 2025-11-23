@@ -531,6 +531,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: fdf30961bf2e4824c9bf3f2a5f040037, type: 2}
   - {fileID: 11400000, guid: 46ab0214002b6874986e52bd16ade1cf, type: 2}
   - {fileID: 11400000, guid: 132c45be4a9d9b44a928260f84160bb3, type: 2}
+  - {fileID: 11400000, guid: ed8f46a98a582e9418516f6f33a1beef, type: 2}
+  - {fileID: 11400000, guid: fc7bcf33d93dcd14c8dbf6a1d0ec7a17, type: 2}
   tier1Heroes:
   - {fileID: 11400000, guid: cd9b55967610193428e491de01bca015, type: 2}
   - {fileID: 11400000, guid: d5e5f720112729445a2929ee4b8bfb82, type: 2}

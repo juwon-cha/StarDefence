@@ -10,21 +10,21 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3cb09eabb1e6be4418a69013bd4a59f4, type: 3}
-  m_Name: Tier3MeleeHero
+  m_Name: MythicMeleeHero
   m_EditorClassIdentifier: 
   maxHealth: 100
-  attackDamage: 20
-  attackRange: 2
-  attackInterval: 1
-  heroName: Tier3MeleeHero
-  heroDescription: Tier3MeleeHero
-  heroPrefabName: Tier3MeleeHero
+  attackDamage: 15
+  attackRange: 1
+  attackInterval: 0.7
+  heroName: MythicMelee
+  heroDescription: MythicMelee
+  heroPrefabName: MythicMeleeHero
   attackType: 0
-  tier: 3
+  tier: 1
   placementCost: 10
   projectilePrefabName: 
-  mythicSkill: {fileID: 0}
-  transcendenceUpgrade: {fileID: 11400000, guid: ed8f46a98a582e9418516f6f33a1beef, type: 2}
-  upgradeCost: 10
+  mythicSkill: {fileID: 11400000, guid: 9abf02c80f9bd034d803b8a3d286e561, type: 2}
+  transcendenceUpgrade: {fileID: 0}
+  upgradeCost: 0
   nextTierHero: {fileID: 0}
-  mythicHeroData: {fileID: 11400000, guid: a6cd684abc28dd84cbdca94b08e319d2, type: 2}
+  mythicHeroData: {fileID: 0}

@@ -33,15 +33,25 @@ public class UpgradePopupUI : UI_Popup
     
     private void SetupButtons()
     {
-        var upgradeList = UpgradeManager.Instance.GetAllUpgradeData();
-        if (upgradeList == null)
+        var allUpgradeDatas = UpgradeManager.Instance.GetAllUpgradeData();
+        if (allUpgradeDatas == null)
         {
             Debug.LogError("[UpgradePopupUI] Upgrade list is not set in UpgradeManager!");
             return;
         }
 
+        List<UpgradeDataSO> filteredUpgradeList = new List<UpgradeDataSO>();
+        foreach (var data in allUpgradeDatas)
+        {
+            // 초월 업그레이드는 제외
+            if (data != null && !data.isTranscendenceUpgrade)
+            {
+                filteredUpgradeList.Add(data);
+            }
+        }
+        
         // 필요한 만큼 버튼 생성 또는 기존 버튼 재사용
-        for (int i = 0; i < upgradeList.Count; i++)
+        for (int i = 0; i < filteredUpgradeList.Count; i++)
         {
             UpgradeButtonUI buttonUI;
             if (i < upgradeButtons.Count)
@@ -60,12 +70,12 @@ public class UpgradePopupUI : UI_Popup
                 upgradeButtons.Add(buttonUI);
             }
 
-            buttonUI.SetData(upgradeList[i]);
+            buttonUI.SetData(filteredUpgradeList[i]);
             buttonUI.gameObject.SetActive(true);
         }
 
         // 남는 버튼들은 비활성화
-        for (int i = upgradeList.Count; i < upgradeButtons.Count; i++)
+        for (int i = filteredUpgradeList.Count; i < upgradeButtons.Count; i++)
         {
             upgradeButtons[i].gameObject.SetActive(false);
         }
